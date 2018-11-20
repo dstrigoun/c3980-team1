@@ -9,7 +9,8 @@
 --											LPSTR lspszCmdParam, int nCmdShow)
 --					LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam,
 --											LPARAM lParam)
---
+--					void triggerRandomWait()
+--					int randomNumberGenerator(int min, int max)
 --
 --	DATE:			November 19, 2018
 --
@@ -27,16 +28,17 @@
 --------------------------------------------------------------------------------------*/
 #include <windows.h>
 #include <stdio.h>
+#include <time.h>
 #include "Menu.h"
 
-char Name[] = "GTID";
+static char Name[] = "GTID";
+static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 #pragma warning (disable: 4096)
 
 LPCSTR	lpszCommName = "com1";
-bool isConnected = false;
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	WinMain
@@ -86,6 +88,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		600, 400, NULL, NULL, hInst, NULL);
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
+	
+	//initial random wait to put programs off sync to reduce collision
+	triggerRandomWait();
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -124,7 +129,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
-		
+			// handle file upload here
 			break;
 		}
 		break;
@@ -137,4 +142,56 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		return DefWindowProc(hwnd, Message, wParam, lParam);
 	}
 	return 0;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	triggerRandomWait
+--
+--	DATE:			November 19, 2018
+--
+--	REVISIONS:		November 19, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		void triggerRandomWait() 
+--
+--	RETURNS:		void
+--
+--	NOTES:
+--	Call this to halt a program and wait random miliseconds 
+--	between 0 and MAX_RANDOM_WAIT_TIME_MS before resuming the program
+--------------------------------------------------------------------------------------*/
+void triggerRandomWait() 
+{
+	DWORD timeToWait_ms = randomNumberGenerator(0, MAX_RANDOM_WAIT_TIME_MS);
+	Sleep(timeToWait_ms);
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	randomNumberGenerator
+--
+--	DATE:			November 19, 2018
+--
+--	REVISIONS:		November 19, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		int randomNumberGenerator(int min, int max)
+--						int min: the minimum number that can be generated
+--						int max: the maximum number that can be generated
+--
+--	RETURNS:		returns the random number between min-max
+--
+--	NOTES:
+--	Call this to generate a random number within a specified range
+--------------------------------------------------------------------------------------*/
+int randomNumberGenerator(int min, int max)
+{
+	srand((unsigned)time(NULL));
+	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
+	return randomNum;
 }
