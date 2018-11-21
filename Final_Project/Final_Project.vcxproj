@@ -115,6 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="FrameHandler.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
   </ItemGroup>
@@ -122,6 +123,7 @@
     <ResourceCompile Include="Menu.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FrameHandler.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

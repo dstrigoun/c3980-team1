@@ -31,6 +31,7 @@
 #include <time.h>
 #include "Menu.h"
 #include "Main.h"
+#include "FrameHandler.h"
 
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
@@ -134,6 +135,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
+			char* output = (char*)malloc(3);
+			generateCtrlFrame(output, 5, 17);
+			OutputDebugString(output);
 			break;
 		}
 		break;
