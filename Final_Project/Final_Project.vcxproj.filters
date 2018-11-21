@@ -13,5 +13,29 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Application">
+      <UniqueIdentifier>{59f66eb3-0a03-40c0-9261-1feeb3cae550}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DataLink">
+      <UniqueIdentifier>{93893fff-4089-4e5d-9d8e-b58277871905}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Physical">
+      <UniqueIdentifier>{0353d29c-49ea-4237-941c-d95270f88ed6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Menu.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files\Application</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
