@@ -11,6 +11,8 @@
 --											LPARAM lParam)
 --					void triggerRandomWait()
 --					int randomNumberGenerator(int min, int max)
+--					DWORD WINAPI checkIdleTimeout(LPVOID n)
+--					void terminateProgram()
 --
 --	DATE:			November 19, 2018
 --
@@ -18,7 +20,7 @@
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
 --	NOTES:
 --	This program will create the window and menu that the user can interact with.
@@ -29,10 +31,19 @@
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>
+#include "Main.h"
 #include "Menu.h"
 
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
+static DWORD IDLE_TIMEOUT_TIME_S = 30;
+static DWORD CHECK_IDLE_TIMEOUT_MS = 5000;
+
+time_t LAST_EOT_RECEIVED;
+DWORD idleTimeoutThreadId;
+
+HANDLE hIdleTimeoutThrd;
+HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -92,6 +103,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
 
+	//set LAST_EOT_RECEIVED to current time
+	LAST_EOT_RECEIVED = time(0);
+
+	//start thread with checkIdleTimeout
+	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);
@@ -135,6 +152,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		break;
 
 	case WM_DESTROY:	// Terminate program
+		SetEvent(stopThreadEvent);
+		CloseHandle(hIdleTimeoutThrd);
 		PostQuitMessage(0);
 		break;
 
@@ -194,4 +213,78 @@ int randomNumberGenerator(int min, int max)
 	srand((unsigned)time(NULL));
 	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
 	return randomNum;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	checkIdleTimeout
+--
+--	DATE:			November 21, 2018
+--
+--	REVISIONS:		November 21, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		DWORD WINAPI checkIdleTimeout(LPVOID n)
+--						LPVOID n: void pointer to thread param
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check the difference between
+--  the current time and the time when the last EOT was received.
+--------------------------------------------------------------------------------------*/
+DWORD WINAPI checkIdleTimeout(LPVOID n)
+{
+	OutputDebugString("in checkIdleTimeout\n");
+
+	char eot[16] = "";
+	sprintf_s(eot, "%d", LAST_EOT_RECEIVED);
+	OutputDebugString(eot);
+	OutputDebugString("\n");
+
+	while (1) {
+		time_t currentTime = time(0);
+
+		char cur[16] = "";
+		sprintf_s(cur, "%d", currentTime);
+		OutputDebugString(cur);
+		OutputDebugString("\n");
+
+		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) {
+			terminateProgram();
+		}
+
+		Sleep(CHECK_IDLE_TIMEOUT_MS);
+	}
+
+	return 0;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	terminateProgram
+--
+--	DATE:			November 21, 2018
+--
+--	REVISIONS:		November 21, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		void terminateProgram()
+--
+--	RETURNS:		n/a
+--
+--	NOTES:
+--	Call this to close all handles and exit the program
+--------------------------------------------------------------------------------------*/
+void terminateProgram() {
+	MessageBox(NULL, "Lost connection.", "", MB_OK);
+
+	SetEvent(stopThreadEvent);
+	CloseHandle(hIdleTimeoutThrd);
+	PostQuitMessage(0);
+	exit(1);
 }
