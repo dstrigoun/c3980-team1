@@ -90,11 +90,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	UpdateWindow(hWnd);
 	srand(time(0));
 	//initial random wait to put programs off sync to reduce collision
-	for (;;) {
-		
-		triggerRandomWait();
-
-	}
+	triggerRandomWait();
 	
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -195,7 +191,6 @@ void triggerRandomWait()
 --------------------------------------------------------------------------------------*/
 int randomNumberGenerator(int min, int max)
 {
-	
 	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
 	return randomNum;
 }
