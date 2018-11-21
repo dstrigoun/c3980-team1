@@ -35,8 +35,6 @@
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
 
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
 #pragma warning (disable: 4096)
 
 LPCSTR	lpszCommName = "com1";
