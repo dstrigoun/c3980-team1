@@ -26,19 +26,10 @@
 --	User can upload by clicking the menu 'Upload'
 --
 --------------------------------------------------------------------------------------*/
-#include <windows.h>
-#include <stdio.h>
-#include <time.h>
-#include "Menu.h"
-
-static char Name[] = "GTID";
-static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
-
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+#include "Main.h"
 
 #pragma warning (disable: 4096)
 
-LPCSTR	lpszCommName = "com1";
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	WinMain
@@ -65,6 +56,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	MSG Msg;
 	WNDCLASSEX Wcl;
 	HWND hWnd;
+	LPCSTR	lpszCommName = "com1";
 
 	Wcl.cbSize = sizeof(WNDCLASSEX);
 	Wcl.style = CS_HREDRAW | CS_VREDRAW;
@@ -88,10 +80,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		600, 400, NULL, NULL, hInst, NULL);
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
-	
+
+	srand(time(0));
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
-
+	
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);
@@ -191,7 +184,6 @@ void triggerRandomWait()
 --------------------------------------------------------------------------------------*/
 int randomNumberGenerator(int min, int max)
 {
-	srand((unsigned)time(NULL));
 	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
 	return randomNum;
 }
