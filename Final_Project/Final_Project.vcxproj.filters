@@ -22,6 +22,15 @@
     <Filter Include="Source Files\Physical">
       <UniqueIdentifier>{0353d29c-49ea-4237-941c-d95270f88ed6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Application">
+      <UniqueIdentifier>{5b620189-65a5-4adf-bd27-d2676fa9a506}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\DataLink">
+      <UniqueIdentifier>{2add8195-4de1-4526-8f34-d040b3440ffe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Physical">
+      <UniqueIdentifier>{3db092e8-c46a-4e3b-9fdd-6349489d7652}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Menu.rc">
@@ -33,7 +42,11 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Main.h">
+<<<<<<< HEAD
       <Filter>Header Files</Filter>
+=======
+      <Filter>Header Files\Application</Filter>
+>>>>>>> 9d940fd1283a9e1b67fc10c26b8ba2a8175c80d6
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

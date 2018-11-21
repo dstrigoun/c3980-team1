@@ -28,16 +28,8 @@
 --	User can upload by clicking the menu 'Upload'
 --
 --------------------------------------------------------------------------------------*/
-#include <windows.h>
-#include <stdio.h>
-#include <time.h>
-#include "Main.h"
-#include "Menu.h"
 
-static char Name[] = "GTID";
-static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
-static DWORD IDLE_TIMEOUT_TIME_S = 30;
-static DWORD CHECK_IDLE_TIMEOUT_MS = 5000;
+#include "Main.h"
 
 time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
@@ -45,11 +37,8 @@ DWORD idleTimeoutThreadId;
 HANDLE hIdleTimeoutThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
 #pragma warning (disable: 4096)
 
-LPCSTR	lpszCommName = "com1";
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	WinMain
@@ -76,6 +65,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	MSG Msg;
 	WNDCLASSEX Wcl;
 	HWND hWnd;
+	LPCSTR	lpszCommName = "com1";
 
 	Wcl.cbSize = sizeof(WNDCLASSEX);
 	Wcl.style = CS_HREDRAW | CS_VREDRAW;
@@ -99,7 +89,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		600, 400, NULL, NULL, hInst, NULL);
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
-	
+
+	srand(time(0));
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
 
@@ -210,7 +201,6 @@ void triggerRandomWait()
 --------------------------------------------------------------------------------------*/
 int randomNumberGenerator(int min, int max)
 {
-	srand((unsigned)time(NULL));
 	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
 	return randomNum;
 }
@@ -233,17 +223,10 @@ int randomNumberGenerator(int min, int max)
 --
 --	NOTES:
 --	Called by the thread created to periodically check the difference between
---  the current time and the time when the last EOT was received.
+--  the current time and the time when the last EOT was received
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI checkIdleTimeout(LPVOID n)
 {
-	OutputDebugString("in checkIdleTimeout\n");
-
-	char eot[16] = "";
-	sprintf_s(eot, "%d", LAST_EOT_RECEIVED);
-	OutputDebugString(eot);
-	OutputDebugString("\n");
-
 	while (1) {
 		time_t currentTime = time(0);
 
@@ -280,7 +263,8 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 --	NOTES:
 --	Call this to close all handles and exit the program
 --------------------------------------------------------------------------------------*/
-void terminateProgram() {
+void terminateProgram() 
+{
 	MessageBox(NULL, "Lost connection.", "", MB_OK);
 
 	SetEvent(stopThreadEvent);
