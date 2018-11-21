@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "Menu.h"
+#include "Main.h"
 
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
@@ -65,7 +66,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	MSG Msg;
 	WNDCLASSEX Wcl;
 	HWND hWnd;
-
 	Wcl.cbSize = sizeof(WNDCLASSEX);
 	Wcl.style = CS_HREDRAW | CS_VREDRAW;
 	Wcl.hIcon = LoadIcon(NULL, IDI_APPLICATION);
@@ -88,10 +88,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		600, 400, NULL, NULL, hInst, NULL);
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
-	
+	srand(time(0));
 	//initial random wait to put programs off sync to reduce collision
-	triggerRandomWait();
+	for (;;) {
+		
+		triggerRandomWait();
 
+	}
+	
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);
@@ -191,7 +195,7 @@ void triggerRandomWait()
 --------------------------------------------------------------------------------------*/
 int randomNumberGenerator(int min, int max)
 {
-	srand((unsigned)time(NULL));
+	
 	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
 	return randomNum;
 }
