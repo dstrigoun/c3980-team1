@@ -27,6 +27,7 @@
 --
 --------------------------------------------------------------------------------------*/
 #include "Main.h"
+#include "FrameHandler.h"
 
 #pragma warning (disable: 4096)
 
@@ -123,6 +124,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
+			char* output = (char*)malloc(3);
+			generateCtrlFrame(output, 5, 17);
+			OutputDebugString(output);
 			break;
 		}
 		break;

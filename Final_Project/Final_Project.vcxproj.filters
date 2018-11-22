@@ -44,10 +44,16 @@
     <ClInclude Include="Main.h">
       <Filter>Header Files\Application</Filter>
     </ClInclude>
+    <ClInclude Include="FrameHandler.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameHandler.cpp">
+      <Filter>Source Files\DataLink</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
