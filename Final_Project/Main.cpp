@@ -124,9 +124,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
-			char* output = (char*)malloc(3);
-			generateCtrlFrame(output, 5, 17);
-			OutputDebugString(output);
+			readCtrlFrame(generateCtrlFrame(112, 112));
 			break;
 		}
 		break;

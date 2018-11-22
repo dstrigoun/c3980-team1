@@ -14,16 +14,30 @@
 // SYN CTRL DC1/2
 
 // ctrl frame generator
-void generateCtrlFrame(char* output, int ctrl, int dc) {
+char* generateCtrlFrame(int ctrl, int dc) {
 	char ctrlFrame[3];
 	ctrlFrame[0] = 22;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = dc;
-	strcpy(output,ctrlFrame);
-	OutputDebugString(output);
+	OutputDebugString(ctrlFrame);
+	return ctrlFrame;
+	//strcpy_s(output,3,ctrlFrame);
+	
 }
 
+//isctrl
 // ctrl frame reader
+void readCtrlFrame(char* ctrlFrameToRead) {
+	int synChar = (unsigned int)ctrlFrameToRead[0];
+	int ctrlChar = (unsigned int)ctrlFrameToRead[1];
+	int dcChar = (unsigned int)ctrlFrameToRead[2];
+	
+	//return ctrlFrame;
+	//strcpy_s(output,3,ctrlFrame);
+	//OutputDebugString(output);
+}
+
+
 
 // DATA FRAME MAKEUP
 // SYN DC1/2 DATA CRC

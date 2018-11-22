@@ -2,4 +2,5 @@
 #include <windows.h>
 #include <string.h>
 
-void generateCtrlFrame(char* output, int ctrl, int dc);
+char* generateCtrlFrame(int ctrl, int dc);
+void readCtrlFrame(char* ctrlFrameToRead);
