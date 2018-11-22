@@ -11,6 +11,8 @@
 --											LPARAM lParam)
 --					void triggerRandomWait()
 --					int randomNumberGenerator(int min, int max)
+--					DWORD WINAPI checkIdleTimeout(LPVOID n)
+--					void terminateProgram()
 --
 --	DATE:			November 19, 2018
 --
@@ -18,7 +20,7 @@
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
 --	NOTES:
 --	This program will create the window and menu that the user can interact with.
@@ -26,7 +28,14 @@
 --	User can upload by clicking the menu 'Upload'
 --
 --------------------------------------------------------------------------------------*/
+
 #include "Main.h"
+
+time_t LAST_EOT_RECEIVED;
+DWORD idleTimeoutThreadId;
+
+HANDLE hIdleTimeoutThrd;
+HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 
 #pragma warning (disable: 4096)
 
@@ -84,7 +93,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	srand(time(0));
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
-	
+
+	//set LAST_EOT_RECEIVED to current time
+	LAST_EOT_RECEIVED = time(0);
+
+	//start thread with checkIdleTimeout
+	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);
@@ -128,6 +143,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		break;
 
 	case WM_DESTROY:	// Terminate program
+		SetEvent(stopThreadEvent);
+		CloseHandle(hIdleTimeoutThrd);
 		PostQuitMessage(0);
 		break;
 
@@ -186,4 +203,67 @@ int randomNumberGenerator(int min, int max)
 {
 	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
 	return randomNum;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	checkIdleTimeout
+--
+--	DATE:			November 21, 2018
+--
+--	REVISIONS:		November 21, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		DWORD WINAPI checkIdleTimeout(LPVOID n)
+--						LPVOID n: void pointer to thread param
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check the difference between
+--  the current time and the time when the last EOT was received
+--------------------------------------------------------------------------------------*/
+DWORD WINAPI checkIdleTimeout(LPVOID n)
+{
+	while (1) {
+		time_t currentTime = time(0);
+
+		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) {
+			terminateProgram();
+		}
+
+		Sleep(CHECK_IDLE_TIMEOUT_MS);
+	}
+
+	return 0;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	terminateProgram
+--
+--	DATE:			November 21, 2018
+--
+--	REVISIONS:		November 21, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		void terminateProgram()
+--
+--	RETURNS:		n/a
+--
+--	NOTES:
+--	Call this to close all handles and exit the program
+--------------------------------------------------------------------------------------*/
+void terminateProgram() 
+{
+	MessageBox(NULL, "Lost connection.", "", MB_OK);
+
+	SetEvent(stopThreadEvent);
+	CloseHandle(hIdleTimeoutThrd);
+	PostQuitMessage(0);
+	exit(1);
 }
