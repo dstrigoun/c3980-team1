@@ -230,11 +230,6 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 	while (1) {
 		time_t currentTime = time(0);
 
-		char cur[16] = "";
-		sprintf_s(cur, "%d", currentTime);
-		OutputDebugString(cur);
-		OutputDebugString("\n");
-
 		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) {
 			terminateProgram();
 		}

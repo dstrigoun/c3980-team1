@@ -42,11 +42,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Main.h">
-<<<<<<< HEAD
-      <Filter>Header Files</Filter>
-=======
       <Filter>Header Files\Application</Filter>
->>>>>>> 9d940fd1283a9e1b67fc10c26b8ba2a8175c80d6
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
