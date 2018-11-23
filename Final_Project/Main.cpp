@@ -124,7 +124,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
-			readCtrlFrame(generateCtrlFrame(112, 112));
+			const char* ctrlFrame = generateCtrlFrame(5, 17);
+			readCtrlFrame(ctrlFrame);
 			break;
 		}
 		break;
