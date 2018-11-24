@@ -13,6 +13,7 @@
 --					int randomNumberGenerator(int min, int max)
 --					DWORD WINAPI checkIdleTimeout(LPVOID n)
 --					void terminateProgram()
+--					void sendCharacter(HWND hwnd)
 --
 --	DATE:			November 19, 2018
 --
@@ -36,6 +37,8 @@ DWORD idleTimeoutThreadId;
 
 HANDLE hIdleTimeoutThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
+HANDLE portHandle;
+COMMCONFIG	cc;
 
 #pragma warning (disable: 4096)
 
@@ -65,7 +68,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	MSG Msg;
 	WNDCLASSEX Wcl;
 	HWND hWnd;
-	LPCSTR	lpszCommName = "com1";
 
 	Wcl.cbSize = sizeof(WNDCLASSEX);
 	Wcl.style = CS_HREDRAW | CS_VREDRAW;
@@ -96,6 +98,18 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	//set LAST_EOT_RECEIVED to current time
 	LAST_EOT_RECEIVED = time(0);
+
+	//open com port
+	if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
+		NULL, OPEN_EXISTING, 0, NULL))
+		== INVALID_HANDLE_VALUE)
+	{
+		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
+		return FALSE;
+	}
+	cc.dwSize = sizeof(COMMCONFIG);
+	cc.wVersion = 0x100;
+	SetCommMask(portHandle, EV_RXCHAR);
 
 	//start thread with checkIdleTimeout
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
@@ -138,6 +152,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
+			sendCharacter(hwnd/*, wParam*/);
+			
 			break;
 		}
 		break;
@@ -266,4 +282,29 @@ void terminateProgram()
 	CloseHandle(hIdleTimeoutThrd);
 	PostQuitMessage(0);
 	exit(1);
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	sendCharacter
+--
+--	DATE:			November 23, 2018
+--
+--	REVISIONS:		November 23, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Alexander Song
+--
+--	INTERFACE:		void sencCharacter(HWND hwnd)
+--
+--	RETURNS:		n/a
+--
+--	NOTES:
+--	Called to send a character to the port
+--------------------------------------------------------------------------------------*/
+void sendCharacter(HWND hwnd) {
+	HDC hdc = GetDC(hwnd); // get device context
+	sprintf_s(str, "%c", LPCWSTR('a'));
+	WriteFile(portHandle, str, 1, 0, NULL);
+	ReleaseDC(hwnd, hdc); // Release device context
 }
