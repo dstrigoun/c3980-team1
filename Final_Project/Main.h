@@ -23,3 +23,5 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow);
+
+void sendCharacter(HWND hwnd/*, WPARAM wParam*/);
