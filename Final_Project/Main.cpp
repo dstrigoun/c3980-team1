@@ -39,6 +39,8 @@ HANDLE hIdleTimeoutThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
+LPCSTR lpszCommName = "com1";
+char str[80] = "";
 
 #pragma warning (disable: 4096)
 
@@ -105,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		== INVALID_HANDLE_VALUE)
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
-		return FALSE;
+		PostQuitMessage(0); // end program since opening port failed
 	}
 	cc.dwSize = sizeof(COMMCONFIG);
 	cc.wVersion = 0x100;
@@ -295,7 +297,7 @@ void terminateProgram()
 --
 --	PROGRAMMER:		Alexander Song
 --
---	INTERFACE:		void sencCharacter(HWND hwnd)
+--	INTERFACE:		void sendCharacter(HWND hwnd)
 --
 --	RETURNS:		n/a
 --
