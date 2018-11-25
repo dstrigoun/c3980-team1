@@ -118,6 +118,8 @@
     <ClInclude Include="FrameHandler.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
+    <ClInclude Include="Receiver.h" />
+    <ClInclude Include="Sender.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Menu.rc" />
@@ -125,6 +127,8 @@
   <ItemGroup>
     <ClCompile Include="FrameHandler.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Receiver.cpp" />
+    <ClCompile Include="Sender.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

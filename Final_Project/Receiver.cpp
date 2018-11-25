@@ -1,12 +1,32 @@
 #include "Receiver.h"
-#include "Main.h"
-#include "FrameHandler.h"
 
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	ReadFromPort
+--
+--	DATE:			November 24, 2018
+--
+--	REVISIONS:		November 24, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		DWORD WINAPI ReadFromPort(LPVOID hComm)
+--						LPVOID hComm - port to be used for writing
+--
+--	RETURNS:		void
+--
+--	NOTES:
+--	Pass this thread function to Receiver thread to handle a received char event
+--	and handle the frame received.
+--------------------------------------------------------------------------------------*/
 DWORD WINAPI ReadFromPort(LPVOID hComm)
 {
 	DWORD dwRead = NULL;
 	char chRead[1024];
+
 	DWORD dwEvent;
+	// commMask should be combined with Sender and set in Main
 	SetCommMask(hComm, EV_RXCHAR);
 
 	while (curState == "RECEIVE")
