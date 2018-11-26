@@ -26,10 +26,30 @@
 --	User can upload by clicking the menu 'Upload'
 --
 --------------------------------------------------------------------------------------*/
-#include <windows.h>
-#include <stdio.h>
-#include <time.h>
+
 #include "Menu.h"
+#include "Main.h"
+#include "CDialogEventHandler.h"
+#include "FileChooser.h"
+
+#define STRICT_TYPED_ITEMIDS
+#include <shlobj.h>
+#include <objbase.h>      // For COM headers
+#include <shobjidl.h>     // for IFileDialogEvents and IFileDialogControlEvents
+#include <shlwapi.h>
+#include <knownfolders.h> // for KnownFolder APIs/datatypes/function headers
+#include <propvarutil.h>  // for PROPVAR-related functions
+#include <propkey.h>      // for the Property key APIs/datatypes
+#include <propidl.h>      // for the Property System APIs
+#include <strsafe.h>      // for StringCchPrintfW
+#include <shtypes.h>      // for COMDLG_FILTERSPEC
+#include <new>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <atlbase.h>
+#include <AtlConv.h>
 
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
@@ -88,9 +108,22 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		600, 400, NULL, NULL, hInst, NULL);
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
+
+
+
 	
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
+
+	//Testing to see if random is actually random
+	int randTest;
+	for (int i = 0; i < 10; i++) {
+		randTest = randomNumberGenerator(0, 100);
+		char str[100] = "";
+		sprintf_s(str, "%d", randTest);
+		OutputDebugString(str);
+		OutputDebugString("\n");
+	}
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -129,7 +162,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
-			// handle file upload here
+			openFile(&hwnd);
 			break;
 		}
 		break;
@@ -195,3 +228,8 @@ int randomNumberGenerator(int min, int max)
 	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
 	return randomNum;
 }
+
+
+
+
+
