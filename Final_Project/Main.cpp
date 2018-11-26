@@ -107,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		== INVALID_HANDLE_VALUE)
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
-		PostQuitMessage(0); // end program since opening port failed
+		//PostQuitMessage(0); // end program since opening port failed
 	}
 	cc.dwSize = sizeof(COMMCONFIG);
 	cc.wVersion = 0x100;
@@ -155,6 +155,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		case IDM_UPLOAD:
 			// handle file upload here
 			char ctrlFrame[1024]; //for test; to be removed
+			char data[3] = { 'a', 'b', 'c' }; //for test; to be removed
+
+			generateDataFrame(ctrlFrame, data); //fortest; to be removed
 			generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
 			sendCharacter(hwnd/*, wParam*/);

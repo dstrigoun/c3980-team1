@@ -156,7 +156,12 @@ void generateDataFrame(char* dataFrame, const char* data) {
 	dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
 	strcat_s(dataFrame, 1024, data);
-	strcat_s(dataFrame, 1, buildCRC(data));
+	//strcat_s(dataFrame, 1, buildCRC(data));
+
+	char cur[16] = "";
+	sprintf_s(cur, "%x", buildCRC(data));
+	OutputDebugString(cur);
+	OutputDebugString("\n");
 }
 
 /*-------------------------------------------------------------------------------------
@@ -201,13 +206,17 @@ void generateCtrlFrame(char* ctrlFrame, int ctrl) {
 --	INTERFACE:		char* buildCRC(const char* data)
 --						const char* data - data to send
 --
---	RETURNS:		char* - generated CRC based on data
+--	RETURNS:		boost::uint16_t - generated CRC based on data
 --
 --	NOTES:
 --  Call this to build CRC for set of data
 --------------------------------------------------------------------------------------*/
-char* buildCRC(const char* data) {
-	
+boost::uint16_t buildCRC(const char* data) {
+	boost::crc_32_type result;
+
+	result.process_bytes(data, 1024);
+
+	return result.checksum();
 }
 
 /*-------------------------------------------------------------------------------------
@@ -231,5 +240,9 @@ char* buildCRC(const char* data) {
 --  Call this to check the CRC in the last byte of the data frame
 --------------------------------------------------------------------------------------*/
 bool checkCRC(const char* data, const char* receivedCRC) {
+	boost::crc_32_type result;
 
+	result.process_bytes(data, 1024);
+
+	return (char*)result.checksum() == receivedCRC;
 }
