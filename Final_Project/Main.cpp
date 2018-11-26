@@ -94,7 +94,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
-	srand(time(0));
+	srand((unsigned int)time(0));
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
 
@@ -122,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		DispatchMessage(&Msg);
 	}
 
-	return Msg.wParam;
+	return (int)Msg.wParam;
 }
 
 /*-------------------------------------------------------------------------------------
@@ -154,8 +154,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
+			char ctrlFrame[1024]; //for test; to be removed
+			generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
+			receiveFrame(ctrlFrame); //for test; to be removed
 			sendCharacter(hwnd/*, wParam*/);
-			
 			break;
 		}
 		break;
@@ -219,7 +221,7 @@ void triggerRandomWait()
 --------------------------------------------------------------------------------------*/
 int randomNumberGenerator(int min, int max)
 {
-	int randomNum = (double)rand() / (RAND_MAX + 1) * (max - min) + min;
+	int randomNum = (int)((double)rand() / (RAND_MAX + 1) * (max - min) + min);
 	return randomNum;
 }
 
