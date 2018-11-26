@@ -115,6 +115,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="EventHandler.h" />
     <ClInclude Include="FrameHandler.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
@@ -125,6 +126,7 @@
     <ResourceCompile Include="Menu.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="FrameHandler.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Receiver.cpp" />
