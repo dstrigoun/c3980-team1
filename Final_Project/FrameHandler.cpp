@@ -89,7 +89,7 @@ void readDataFrame(const char* frame) {
 	}
 	else {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
-		nextFrameToReceive = (frame[1] == (char)17) ? (char)18 : (char)17;
+		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
 
 		//check lastByte CRC if data is corrupt
 
