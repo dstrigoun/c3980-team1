@@ -91,10 +91,16 @@ void readDataFrame(const char* frame) {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
 		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
 
-		//check lastByte CRC if data is corrupt
-
 		char data[1021];
+		char receivedCRC[2];
 		strncpy_s(data, frame + 2, 1020);
+		strncpy_s(receivedCRC, frame + 2 + 1020, 1);
+
+		//check lastByte CRC if data is corrupt
+		if (checkCRC(data, receivedCRC)) {
+			//CRC passed
+		}
+
 		//return the data portion to be appended to file
 	}
 }
@@ -150,7 +156,7 @@ void generateDataFrame(char* dataFrame, const char* data) {
 	dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
 	strcat_s(dataFrame, 1024, data);
-	// strcat CRC to dataframe
+	strcat_s(dataFrame, 1, buildCRC(data));
 }
 
 /*-------------------------------------------------------------------------------------
@@ -179,4 +185,51 @@ void generateCtrlFrame(char* ctrlFrame, int ctrl) {
 	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = nextFrameToSend;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	buildCRC
+--
+--	DATE:			November 26, 2018
+--
+--	REVISIONS:		November 26, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		char* buildCRC(const char* data)
+--						const char* data - data to send
+--
+--	RETURNS:		char* - generated CRC based on data
+--
+--	NOTES:
+--  Call this to build CRC for set of data
+--------------------------------------------------------------------------------------*/
+char* buildCRC(const char* data) {
+	
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	checkCRC
+--
+--	DATE:			November 26, 2018
+--
+--	REVISIONS:		November 26, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		bool checkCRC(const char* data, const char* receivedCRC)
+--						const char* data - data to send
+--						const char* receivedCRC - CRC checksum at the end of frame
+--
+--	RETURNS:		bool - whether receivedCRC and calculated CRC match
+--
+--	NOTES:
+--  Call this to check the CRC in the last byte of the data frame
+--------------------------------------------------------------------------------------*/
+bool checkCRC(const char* data, const char* receivedCRC) {
+
 }
