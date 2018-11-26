@@ -1,20 +1,5 @@
 #include "FrameHandler.h"
 
-//ascii dec codes
-// SYN  22
-// DC1	17
-// DC2	18
-// ACK	6
-// NAK	21
-// ENQ	5
-// EOT	4
-
-// CTRL FRAME MAKEUP
-// SYN CTRL DC1/2
-
-// DATA FRAME MAKEUP
-// SYN DC1/2 DATA CRC
-
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
 --
@@ -37,8 +22,8 @@
 void receiveFrame(const char* frame) {
 
 	// check type of frame
-	if (frame[0] == (char)22) {
-		if (frame[1] == (char)17 || frame[1] == (char)18) {
+	if (frame[0] == SYN) {
+		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
 			readDataFrame(frame);
 		}
@@ -158,9 +143,11 @@ void readCtrlFrame(const char* frame) {
 --
 --	NOTES:
 --	Call this to generate a data frame
+--	DATA FRAME MAKEUP
+--	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
 void generateDataFrame(char* dataFrame, const char* data) {
-	dataFrame[0] = 22;
+	dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
 	strcat_s(dataFrame, 1024, data);
 	// strcat CRC to dataframe
@@ -185,9 +172,11 @@ void generateDataFrame(char* dataFrame, const char* data) {
 --
 --	NOTES:
 --	Call this to generate a control frame
+--	CTRL FRAME MAKEUP
+--	SYN | CTRL | DC1/2
 --------------------------------------------------------------------------------------*/
 void generateCtrlFrame(char* ctrlFrame, int ctrl) {
-	ctrlFrame[0] = 22;
+	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = nextFrameToSend;
 }
