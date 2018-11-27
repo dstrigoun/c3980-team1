@@ -20,27 +20,16 @@
 --	Pass this thread function to Receiver thread to handle a received char event
 --	and handle the frame received.
 --------------------------------------------------------------------------------------*/
-DWORD WINAPI ReadFromPort(LPVOID hComm)
+void ReadFromPort(LPVOID portHandle)
 {
 	DWORD dwRead = NULL;
 	char chRead[1024];
-	DWORD dwEvent;
-	while (curState == "RECEIVE")
+	do
 	{
-
-		do
+		ReadFile(portHandle, chRead, 1024, &dwRead, NULL);
+		if (chRead != NULL)
 		{
-
-			ReadFile(hComm, chRead, 1024, &dwRead, NULL);
-			if (chRead != NULL)
-			{
-				receiveFrame(chRead);
-			}
-		} while (dwRead == 1024);
-
-
-
-
-	}
-	return 0;
+			receiveFrame(chRead);
+		}
+	} while (dwRead == 1024);
 }

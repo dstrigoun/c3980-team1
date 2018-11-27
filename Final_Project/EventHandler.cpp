@@ -25,31 +25,28 @@ void stopEventHandlerThrd()
 }
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	ReadFromPort
+--	FUNCTION:	pollForEvents
 --
---	DATE:			October 2, 2018
+--	DATE:			November 26, 2018
 --
---	REVISIONS:		October 2, 2018 (Initial version)
+--	REVISIONS:		November 26, 2018 (Initial version)
 --
---	DESIGNER:		Jason Kim
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
 --	PROGRAMMER:		Jason Kim
 --
---	INTERFACE:		DWORD WINAPI ReadFromPort(LPVOID hComm)
---						LPVOID hComm: the handle to monitor for incoming characters
+--	INTERFACE:		DWORD WINAPI pollForEvents(LPVOID portHandle)
+--						LPVOID portHandle: the handle to monitor for incoming frames
 --
 --	RETURNS:		returns 0 when infinite loop to poll for received characters exits
 --
 --	NOTES:
 --	Thread calls this function and initiates the infinite loop to poll for any
 --	characters received via the connected port.
---	Any characters received is passed as a parameter with the displayCharactersRead
---	function call.
+--	Any data received is passed to receiveFrame to be hanl.
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI pollForEvents(LPVOID portHandle)
 {
-	DWORD dwRead = NULL;
-	char chRead[1024];
 	DWORD dwEvent;
 	isListening = true;
 	SetCommMask(portHandle, EV_RXCHAR | EV_CTS);
@@ -60,14 +57,7 @@ DWORD WINAPI pollForEvents(LPVOID portHandle)
 		{
 			if (dwEvent & EV_RXCHAR)
 			{
-				do
-				{
-					ReadFile(portHandle, chRead, 1024, &dwRead, NULL);
-					if (chRead != NULL)
-					{
-						receiveFrame(chRead);
-					}
-				} while (dwRead == 1024);
+				ReadFromPort(portHandle);
 			}
 		}
 		else
