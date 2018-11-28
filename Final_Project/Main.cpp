@@ -18,10 +18,11 @@
 --	DATE:			November 19, 2018
 --
 --	REVISIONS:		November 19, 2018
+--					November 23, 2018 - added sendCharacter(HWND hwnd)
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim, Dasha Strigoun
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun, Alexander Song
 --
 --	NOTES:
 --	This program will create the window and menu that the user can interact with.
@@ -32,7 +33,7 @@
 
 #include "Main.h"
 
-time_t LAST_EOT_RECEIVED;
+//time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
 
 HANDLE hIdleTimeoutThrd;
@@ -99,7 +100,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	triggerRandomWait();
 
 	//set LAST_EOT_RECEIVED to current time
-	LAST_EOT_RECEIVED = time(0);
+	//LAST_EOT_RECEIVED = time(0);
 
 	//open com port
 	if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
@@ -157,7 +158,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			char ctrlFrame[1024]; //for test; to be removed
 			generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
-			sendCharacter(hwnd/*, wParam*/);
+			sendCharacter(hwnd);
 			break;
 		}
 		break;
@@ -312,3 +313,4 @@ void sendCharacter(HWND hwnd) {
 	WriteFile(portHandle, str, 1, 0, NULL);
 	ReleaseDC(hwnd, hdc); // Release device context
 }
+
