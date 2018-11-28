@@ -159,10 +159,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
-			char ctrlFrame[1024]; //for test; to be removed
-			generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
+			char ctrlFrame[1024] = { 22, 4}; //for test; to be removed
+			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
-			sendCharacter(hwnd);
+			//sendCharacter(hwnd);
 			break;
 		}
 		break;
