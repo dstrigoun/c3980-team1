@@ -157,9 +157,9 @@ void readCtrlFrame(const char* frame) {
 --	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
 void generateDataFrame(char* dataFrame, const char* data) {
-	dataFrame[0] = SYN;
+	/*dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
-	strcat_s(dataFrame, 1024, data);
+	strcat_s(dataFrame, 1024, data);*/
 	// strcat CRC to dataframe
 }
 
