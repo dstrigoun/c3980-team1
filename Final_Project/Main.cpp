@@ -34,8 +34,10 @@
 
 time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
+DWORD eventHandlerThreadId;
 
 HANDLE hIdleTimeoutThrd;
+HANDLE eventHandlerThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
@@ -115,6 +117,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	//start thread with checkIdleTimeout
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)portHandle, 0, &eventHandlerThreadId);
+
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{

@@ -33,7 +33,7 @@ void receiveFrame(const char* frame) {
 		}
 	}
 	else {
-		// frame corrupt, first byte not SYN
+			MessageBox(NULL, "Frame Corrupt, 1st Byte not SYN", "", MB_OK);
 	}
 }
 
