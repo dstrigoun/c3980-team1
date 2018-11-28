@@ -85,6 +85,10 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>propsys.lib;shlwapi.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -116,6 +120,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="EventHandler.h" />
+    <ClInclude Include="FileChooser.h" />
     <ClInclude Include="FrameHandler.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
@@ -127,6 +132,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EventHandler.cpp" />
+    <ClCompile Include="FileChooser.cpp" />
     <ClCompile Include="FrameHandler.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Receiver.cpp" />
