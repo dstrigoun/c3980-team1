@@ -105,10 +105,11 @@ void readDataFrame(const char* frame) {
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--					November 26, 2018 - receive EOT and ENQ and update state
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Alexander Song
 --
 --	INTERFACE:		void readCtrlFrame(const char* frame)
 --						const char* frame - control frame to read
@@ -122,6 +123,15 @@ void readCtrlFrame(const char* frame) {
 	int ctrlChar = (int)frame[1];
 	int dcChar = (int)frame[2];
 	// handle behaviour based on control char received
+	if (curState == "IDLE") {
+		if (ctrlChar == EOT)
+			LAST_EOT_RECEIVED = time(0);
+		else if (ctrlChar == ENQ && !ENQ_FLAG) {
+			char ctrlFrame[1024];
+			sendFrame(ctrlFrame, nullptr, ACK);
+			curState = "RECEIVE";
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------------
