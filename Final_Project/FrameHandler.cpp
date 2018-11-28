@@ -155,10 +155,10 @@ void readCtrlFrame(const char* frame) {
 void generateDataFrame(char* dataFrame, const char* data) {
 	dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
-	strcat_s(dataFrame, 1024, data);
-	//strcat_s(dataFrame, 1, buildCRC(data));
+	strcat_s(dataFrame, 1021, data);
+	//strcat_s(dataFrame, 4, (char*)buildCRC(data));
 
-	char cur[16] = "";
+	char cur[64] = {};
 	sprintf_s(cur, "%x", buildCRC(data));
 	OutputDebugString(cur);
 	OutputDebugString("\n");
@@ -214,7 +214,7 @@ void generateCtrlFrame(char* ctrlFrame, int ctrl) {
 boost::uint16_t buildCRC(const char* data) {
 	boost::crc_32_type result;
 
-	result.process_bytes(data, 1024);
+	result.process_bytes(data, 1021);
 
 	return result.checksum();
 }
@@ -242,7 +242,7 @@ boost::uint16_t buildCRC(const char* data) {
 bool checkCRC(const char* data, const char* receivedCRC) {
 	boost::crc_32_type result;
 
-	result.process_bytes(data, 1024);
+	result.process_bytes(data, 1021);
 
 	return (char*)result.checksum() == receivedCRC;
 }

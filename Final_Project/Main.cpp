@@ -154,12 +154,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
-			char ctrlFrame[1024]; //for test; to be removed
-			char data[3] = { 'a', 'b', 'c' }; //for test; to be removed
+			char ctrlFrame[2048] = {}; //for test; to be removed
+			char data[1021] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 }; //for test; to be removed
 
 			generateDataFrame(ctrlFrame, data); //fortest; to be removed
-			generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
-			receiveFrame(ctrlFrame); //for test; to be removed
+			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
+			//receiveFrame(ctrlFrame); //for test; to be removed
 			sendCharacter(hwnd/*, wParam*/);
 			break;
 		}
