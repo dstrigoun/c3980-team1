@@ -19,6 +19,5 @@
 #include <vector>
 #include <string>
 
-
-std::vector<std::string> openFile(HWND *hWnd);
+std::ifstream openFile(HWND *hWnd);
 

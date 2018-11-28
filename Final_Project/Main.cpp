@@ -176,7 +176,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
 			sendCharacter(hwnd);
-			vector<string> fileResult = openFile(&hwnd);
+			ifstream fileResult = openFile(&hwnd);
 			
 			break;
 		}

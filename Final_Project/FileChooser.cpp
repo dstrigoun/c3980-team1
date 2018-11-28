@@ -28,11 +28,13 @@ const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 --	NOTES:          TODO
 --
 --------------------------------------------------------------------------------------*/
-std::vector<std::string> openFile(HWND *hWnd)
+std::ifstream openFile(HWND *hWnd)
 {
 	USES_CONVERSION;
 
 	std::vector<std::string> lines;
+	std::ifstream hFile;
+
 
 	// CoCreate the File Open Dialog object.
 	IFileDialog *pfd = NULL;
@@ -86,7 +88,7 @@ std::vector<std::string> openFile(HWND *hWnd)
 
 										if (SUCCEEDED(hr))
 										{
-											std::ifstream hFile(W2A(pszFilePath));
+											hFile.open(W2A(pszFilePath));
 
 											std::string line;
 											while (std::getline(hFile, line))
@@ -95,7 +97,7 @@ std::vector<std::string> openFile(HWND *hWnd)
 											for (std::string s : lines) {
 												LPCSTR ss = s.c_str();
 												OutputDebugString(ss);
-												MessageBox(*hWnd, ss, "file path?", MB_OK);
+												MessageBox(*hWnd, ss, W2A(pszFilePath), MB_OK);
 
 											}
 											CoTaskMemFree(pszFilePath);
@@ -109,6 +111,7 @@ std::vector<std::string> openFile(HWND *hWnd)
 				}
 			}
 	}
-	return lines;
+	//return lines;
+	return hFile;
 }
 
