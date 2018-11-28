@@ -125,7 +125,7 @@ void readCtrlFrame(const char* frame) {
 	// handle behaviour based on control char received
 	if (curState == "IDLE") {
 		if (ctrlChar == EOT)
-			LAST_EOT_RECEIVED = time(&LAST_EOT_RECEIVED);
+			LAST_EOT_RECEIVED = time(0);
 		else if (ctrlChar == ENQ && !ENQ_FLAG) {
 			char ctrlFrame[1024];
 			sendFrame(ctrlFrame, nullptr, ACK);
