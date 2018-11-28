@@ -44,74 +44,73 @@ std::ifstream openFile(HWND *hWnd)
 		IID_PPV_ARGS(&pfd));
 	if (SUCCEEDED(hr))
 	{
-			// Set the options on the dialog.
-			DWORD dwFlags;
+		// Set the options on the dialog.
+		DWORD dwFlags;
 
-			// Before setting, always get the options first in order 
-			// not to override existing options.
-			hr = pfd->GetOptions(&dwFlags);
+		// Before setting, always get the options first in order 
+		// not to override existing options.
+		hr = pfd->GetOptions(&dwFlags);
+		if (SUCCEEDED(hr))
+		{
+			// In this case, get shell items only for file system items.
+			hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
 			if (SUCCEEDED(hr))
 			{
-				// In this case, get shell items only for file system items.
-				hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
+				// Set the file types to display only. 
+				// Notice that this is a 1-based array.
+				hr = pfd->SetFileTypes(ARRAYSIZE(c_rgSaveTypes), c_rgSaveTypes);
 				if (SUCCEEDED(hr))
 				{
-					// Set the file types to display only. 
-					// Notice that this is a 1-based array.
-					hr = pfd->SetFileTypes(ARRAYSIZE(c_rgSaveTypes), c_rgSaveTypes);
+					// Set the selected file type index to Word Docs for this example.
+					hr = pfd->SetFileTypeIndex(INDEX_TEXTDOC);
 					if (SUCCEEDED(hr))
 					{
-						// Set the selected file type index to Word Docs for this example.
-						hr = pfd->SetFileTypeIndex(INDEX_TEXTDOC);
+						// Set the default extension to be ".doc" file.
+						hr = pfd->SetDefaultExtension(L"txt");
 						if (SUCCEEDED(hr))
 						{
-							// Set the default extension to be ".doc" file.
-							hr = pfd->SetDefaultExtension(L"txt");
+							// Show the dialog
+							hr = pfd->Show(NULL);
 							if (SUCCEEDED(hr))
 							{
-								// Show the dialog
-								hr = pfd->Show(NULL);
+								// Obtain the result once the user clicks 
+								// the 'Open' button.
+								// The result is an IShellItem object.
+								IShellItem *psiResult;
+								hr = pfd->GetResult(&psiResult);
 								if (SUCCEEDED(hr))
 								{
-									// Obtain the result once the user clicks 
-									// the 'Open' button.
-									// The result is an IShellItem object.
-									IShellItem *psiResult;
-									hr = pfd->GetResult(&psiResult);
+									// We are just going to print out the 
+									// name of the file for sample sake.
+									PWSTR pszFilePath = NULL;
+									hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH,
+										&pszFilePath);
+
 									if (SUCCEEDED(hr))
 									{
-										// We are just going to print out the 
-										// name of the file for sample sake.
-										PWSTR pszFilePath = NULL;
-										hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH,
-											&pszFilePath);
+										hFile.open(W2A(pszFilePath));
 
-										if (SUCCEEDED(hr))
-										{
-											hFile.open(W2A(pszFilePath));
+										/*std::string line;
+										while (std::getline(hFile, line))
+											lines.push_back(line);
 
-											std::string line;
-											while (std::getline(hFile, line))
-												lines.push_back(line);
-
-											for (std::string s : lines) {
-												LPCSTR ss = s.c_str();
-												OutputDebugString(ss);
-												MessageBox(*hWnd, ss, W2A(pszFilePath), MB_OK);
-
-											}
-											CoTaskMemFree(pszFilePath);
-										}
-										psiResult->Release();
+										for (std::string s : lines) {
+											LPCSTR ss = s.c_str();
+											OutputDebugString(ss);
+											MessageBox(*hWnd, ss, W2A(pszFilePath), MB_OK);
+*/
+										//}
+										CoTaskMemFree(pszFilePath);
 									}
+									psiResult->Release();
 								}
 							}
 						}
 					}
 				}
 			}
+		}
 	}
-	//return lines;
 	return hFile;
 }
 
