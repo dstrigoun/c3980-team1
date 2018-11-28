@@ -19,5 +19,9 @@
 #include <vector>
 #include <string>
 
-std::ifstream openFile(HWND *hWnd);
+using namespace std;
+const int NUM_PAYLOAD_BYTES = 1021;
+
+ifstream openFile(HWND *hWnd);
+char* getPayload(ifstream* currFile);
 

@@ -58,6 +58,8 @@ COMMCONFIG	cc;
 LPCSTR lpszCommName = "com1";
 char str[80] = "";
 
+ifstream currUploadFile;
+
 #pragma warning (disable: 4096)
 
 
@@ -176,7 +178,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
 			sendCharacter(hwnd);
-			ifstream fileResult = openFile(&hwnd);
+			currUploadFile = openFile(&hwnd);
+			LPCSTR temp;
+			string s;
+			
+			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
+				MessageBox(hwnd, temp, "title", MB_OK);
+
+				//OutputDebugString(temp);
+			}
+			//temp = getPayload(&currUploadFile);
 			
 			break;
 		}

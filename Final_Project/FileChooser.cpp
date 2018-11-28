@@ -2,6 +2,7 @@
 
 #define INDEX_TEXTDOC 3
 
+using namespace std;
 //File extensions users are allowed to choose
 const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 {
@@ -114,3 +115,27 @@ std::ifstream openFile(HWND *hWnd)
 	return hFile;
 }
 
+char* getPayload(ifstream* currFile) { //todo free char* pointer later?
+	char* payload = new char[NUM_PAYLOAD_BYTES + 1];
+	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
+		payload[i] = '\0';
+	}
+	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
+		payload[i] = currFile->get();
+		
+		if (currFile->eof()) {
+			payload[i] = EOF;
+			OutputDebugString("eofbit true");
+			break;
+		}
+		if (currFile->fail()) {
+			OutputDebugString("failbit true");
+			break;
+		}
+		if (i == NUM_PAYLOAD_BYTES - 1) {
+			OutputDebugString("i made it to end of payload");
+			payload[i + 1] = '\0';
+		}
+	}
+	return payload;
+}
