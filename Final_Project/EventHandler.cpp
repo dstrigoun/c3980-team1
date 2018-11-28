@@ -1,13 +1,13 @@
 #include "EventHandler.h"
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	StopThread
+--	FUNCTION:	stopEventHandlerThrd
 --
---	DATE:			October 2, 2018
+--	DATE:			November 26, 2018
 --
---	REVISIONS:		October 2, 2018 (Initial version)
+--	REVISIONS:		November 26, 2018 (Initial version)
 --
---	DESIGNER:		Jason Kim
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
 --	PROGRAMMER:		Jason Kim
 --
@@ -16,7 +16,7 @@
 --	RETURNS:		void
 --
 --	NOTES:
---	Call this function to set isReading to false to trigger the running thread to exit
+--	Call this function to set isListening to false to trigger the running thread to exit
 --	and close the thread handle after.
 --------------------------------------------------------------------------------------*/
 void stopEventHandlerThrd()
