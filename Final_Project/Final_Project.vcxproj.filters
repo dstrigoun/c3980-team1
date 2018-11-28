@@ -35,9 +35,6 @@
     <ClInclude Include="Main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CDialogEventHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FileChooser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -47,9 +44,6 @@
       <Filter>Source Files\Application</Filter>
     </ClCompile>
     <ClCompile Include="FileChooser.cpp">
-      <Filter>Source Files\Application</Filter>
-    </ClCompile>
-    <ClCompile Include="CDialogEventHandler.cpp">
       <Filter>Source Files\Application</Filter>
     </ClCompile>
   </ItemGroup>

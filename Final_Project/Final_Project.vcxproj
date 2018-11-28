@@ -119,7 +119,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CDialogEventHandler.h" />
     <ClInclude Include="FileChooser.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
@@ -128,7 +127,6 @@
     <ResourceCompile Include="Menu.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CDialogEventHandler.cpp" />
     <ClCompile Include="FileChooser.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>

@@ -1,5 +1,4 @@
 #pragma once
-#include "CDialogEventHandler.h"
 #include <shlobj.h>
 #include <objbase.h>      // For COM headers
 #include <shobjidl.h>     // for IFileDialogEvents and IFileDialogControlEvents
@@ -17,7 +16,9 @@
 #include <string>
 #include <atlbase.h>
 #include <AtlConv.h>
+#include <vector>
+#include <string>
 
 
-HRESULT openFile(HWND *hWnd);
+std::vector<std::string> openFile(HWND *hWnd);
 
