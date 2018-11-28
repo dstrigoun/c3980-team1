@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>
@@ -31,3 +32,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow);
 
 void sendCharacter(HWND hwnd);
+

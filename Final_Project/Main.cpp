@@ -31,11 +31,24 @@
 --
 --------------------------------------------------------------------------------------*/
 
-#include "Main.h"
 
 //time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
+#include "Menu.h"
+#include "Main.h"
+#include "FileChooser.h"
+
+#define STRICT_TYPED_ITEMIDS
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <atlbase.h>
+#include <AtlConv.h>
+using namespace std;
+static char Name[] = "GTID";
+static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
 
 HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
@@ -163,6 +176,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
 			sendCharacter(hwnd);
+			vector<string> fileResult = openFile(&hwnd);
+			
 			break;
 		}
 		break;
@@ -317,4 +332,5 @@ void sendCharacter(HWND hwnd) {
 	WriteFile(portHandle, str, 1, 0, NULL);
 	ReleaseDC(hwnd, hdc); // Release device context
 }
+
 
