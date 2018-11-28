@@ -36,13 +36,16 @@
 //time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
+DWORD senderThreadId;
 
 HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
+HANDLE senderThrd;
+
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
-LPCSTR lpszCommName = "com1";
+LPCSTR lpszCommName = "com2";
 char str[80] = "";
 
 #pragma warning (disable: 4096)
@@ -120,6 +123,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)portHandle, 0, &eventHandlerThreadId);
 
+	char data2[1024];
+	generateCtrlFrame(data2, 70);
+	PWriteParams writeParams = new WriteParams(portHandle, data2);
+	hComm = portHandle;
+	senderThrd = CreateThread(NULL, 0, WriteToPort, (LPVOID)writeParams, 0, &senderThreadId);
+
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -159,10 +168,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
-			char ctrlFrame[1024]; //for test; to be removed
-			generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
-			receiveFrame(ctrlFrame); //for test; to be removed
-			sendCharacter(hwnd);
+			//char ctrlFrame[1024]; //for test; to be removed
+			//char data[1020] = { 1,2,3,4,5,6 };
+			//generateDataFrame(ctrlFrame, data);
+			///generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
+			//receiveFrame(ctrlFrame); //for test; to be removed
+			sendCharacter(hwnd/*, wParam*/);
 			break;
 		}
 		break;
@@ -312,9 +323,9 @@ void terminateProgram()
 --	Called to send a character to the port
 --------------------------------------------------------------------------------------*/
 void sendCharacter(HWND hwnd) {
-	HDC hdc = GetDC(hwnd); // get device context
+	//HDC hdc = GetDC(hwnd); // get device context
 	sprintf_s(str, "%c", LPCWSTR('a'));
 	WriteFile(portHandle, str, 1, 0, NULL);
-	ReleaseDC(hwnd, hdc); // Release device context
+	//ReleaseDC(hwnd, hdc); // Release device context
 }
 

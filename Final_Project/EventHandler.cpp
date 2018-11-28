@@ -49,7 +49,6 @@ DWORD WINAPI pollForEvents(LPVOID portHandle)
 {
 	DWORD dwEvent;
 	isListening = true;
-	SetCommMask(portHandle, EV_RXCHAR | EV_CTS);
 
 	while (isListening)
 	{

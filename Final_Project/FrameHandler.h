@@ -4,7 +4,6 @@
 #include <string.h>
 #include "Main.h"
 
-
 static const char SYN = 22;
 static const char DC1 = 17;
 static const char DC2 = 18;

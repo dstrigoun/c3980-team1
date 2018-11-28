@@ -1,4 +1,4 @@
-#include "Sender.h"
+#include "WriteHandler.h"
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	WriteToPort
@@ -20,28 +20,26 @@
 --	NOTES:
 --	Pass this thread function to Sender thread to send out a frame
 --------------------------------------------------------------------------------------*/
-//DWORD WINAPI WriteToPort(LPVOID portHandle)
-//{
-//	DWORD dwWrite = NULL;
-//	DWORD dwBytesWritten = 0;
-//
-//	//PWriteParams wp;
-//	//wp = PWriteParams(writeParams);
-//	//char* test = wp->data;
-//	//char* test = (char*)writeParams;
-//	char data2[2] = "t";
-//	//generateCtrlFrame(data2, 4);
-//
-//	do
-//	{
-//		//OutputDebugString(data2);
-//		//WriteFile(hComm, data2, 2, 0, NULL);
-//
-//		char str[80] = "";
-//		sprintf_s(str, "%c", LPCWSTR('a'));
-//		WriteFile(portHandle, str, 1, 0, NULL);
-//		Sleep(1000);
-//	} while (true);
-//
-//	return 0;
-//}
+DWORD WINAPI WriteToPort(LPVOID writeParams)
+{
+	DWORD dwWrite = NULL;
+	DWORD dwBytesWritten = 0;
+
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
+	//char* test = wp->data;
+	//char* test = (char*)writeParams;
+	char data2[2] = "t";
+	//generateCtrlFrame(data2, 4);
+
+	do
+	{
+		//OutputDebugString(data2);
+		//WriteFile(hComm, data2, 2, 0, NULL);
+
+		WriteFile(wp->hComm, wp->data, 1, 0, NULL);
+		Sleep(1000);
+	} while (true);
+
+	return 0;
+}
