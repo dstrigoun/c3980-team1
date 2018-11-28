@@ -96,10 +96,22 @@ void readDataFrame(const char* frame) {
 		strncpy_s(data, frame + 2, 1020);
 		strncpy_s(receivedCRC, frame + 2 + 1020, 1);
 
-		//check lastByte CRC if data is corrupt
-		if (checkCRC(data, receivedCRC)) {
-			//CRC passed
+		if (receivedCRC[0] == '1') {
+			OutputDebugString("wow the dummy bit is good");
 		}
+
+		//-----------------------------------------------------
+		//char cur[1024] = {};
+		//sprintf_s(cur, "original CRC: %x", receivedCRC);
+		//OutputDebugString(cur);
+		//OutputDebugString("\n");
+
+		////check lastByte CRC if data is corrupt
+		//if (checkCRC(data, (boost::uint16_t)receivedCRC)) {
+		//	OutputDebugString("CRC passed\n");
+		//}
+		//OutputDebugString("CRC failed\n");
+		//-----------------------------------------------------
 
 		//return the data portion to be appended to file
 	}
@@ -156,12 +168,29 @@ void generateDataFrame(char* dataFrame, const char* data) {
 	dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
 	strcat_s(dataFrame, 1021, data);
-	//strcat_s(dataFrame, 4, (char*)buildCRC(data));
 
-	char cur[64] = {};
-	sprintf_s(cur, "%x", buildCRC(data));
-	OutputDebugString(cur);
-	OutputDebugString("\n");
+	if ((sizeof(data) / sizeof(data[0])) < 1021) {
+		OutputDebugString("data is less than 1021");
+		for (int i = 0; i < (1021 - (sizeof(data) / sizeof(data[0]))); i++) {
+			//TODO: this doesn't actually work
+			char nullChar[2] = { 0 };
+			strcat_s(dataFrame, 1021, nullChar);
+		}
+	}
+
+	char dummyCRC[2] = { 1 };
+	strcat_s(dataFrame, 1021, (LPCSTR)dummyCRC);
+
+	//------------------------------------------------------
+	//boost::uint16_t var = buildCRC(data);
+
+	//char msgbuf[1024];
+	//sprintf_s(msgbuf, "%x", (unsigned)var);
+	//OutputDebugString(msgbuf);
+	//OutputDebugString("\n");
+
+	//strcat_s(dataFrame, 1021, msgbuf);
+	//-------------------------------------------------------
 }
 
 /*-------------------------------------------------------------------------------------
@@ -212,7 +241,7 @@ void generateCtrlFrame(char* ctrlFrame, int ctrl) {
 --  Call this to build CRC for set of data
 --------------------------------------------------------------------------------------*/
 boost::uint16_t buildCRC(const char* data) {
-	boost::crc_32_type result;
+	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
 
 	result.process_bytes(data, 1021);
 
@@ -239,10 +268,20 @@ boost::uint16_t buildCRC(const char* data) {
 --	NOTES:
 --  Call this to check the CRC in the last byte of the data frame
 --------------------------------------------------------------------------------------*/
-bool checkCRC(const char* data, const char* receivedCRC) {
-	boost::crc_32_type result;
+bool checkCRC(const char* data, boost::uint16_t receivedCRC) {
+	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
 
 	result.process_bytes(data, 1021);
 
-	return (char*)result.checksum() == receivedCRC;
+	char expected[64] = {};
+	sprintf_s(expected, "expected CRC: %u", (unsigned)receivedCRC);
+	OutputDebugString(expected);
+	OutputDebugString("\n");
+
+	char msgbuf[1024];
+	sprintf_s(msgbuf, "calculated CRC: %u", (unsigned)result.checksum());
+	OutputDebugString(msgbuf);
+	OutputDebugString("\n");
+
+	return result.checksum() == receivedCRC;
 }
