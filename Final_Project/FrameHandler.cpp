@@ -122,10 +122,19 @@ void readDataFrame(const char* frame) {
 void readCtrlFrame(const char* frame) {
 	int ctrlChar = (int)frame[1];
 	int dcChar = (int)frame[2];
+	char cur[16] = "";
+	sprintf_s(cur, "%d", ctrlChar);
+	OutputDebugString(cur);
+	OutputDebugString("\n");
 	// handle behaviour based on control char received
 	if (curState == "IDLE") {
-		if (ctrlChar == EOT)
+		if (ctrlChar == EOT) {
 			LAST_EOT_RECEIVED = time(0);
+			char cur2[16] = "";
+			sprintf_s(cur2, "%d", LAST_EOT_RECEIVED);
+			OutputDebugString(cur2);
+			OutputDebugString("\n");
+		}
 		else if (ctrlChar == ENQ && !ENQ_FLAG) {
 			char ctrlFrame[1024];
 			sendFrame(ctrlFrame, nullptr, ACK);
