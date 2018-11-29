@@ -45,7 +45,7 @@ HANDLE senderThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
-LPCSTR lpszCommName = "com2";
+LPCSTR lpszCommName = "com1";
 char str[80] = "";
 
 #pragma warning (disable: 4096)
