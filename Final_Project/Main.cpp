@@ -173,12 +173,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
-			// handle file upload here
-			char ctrlFrame[1024]; //for test; to be removed
-			sendCharacter(hwnd);
 			currUploadFile = openFile(&hwnd);
 			LPCSTR temp;
-			string s;
 			
 			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
 				MessageBox(hwnd, temp, "title", MB_OK);
