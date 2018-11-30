@@ -29,3 +29,4 @@ void generateCtrlFrame(char* ctrlFrame, int ctrl);
 
 boost::uint16_t buildCRC(const char* data);
 bool checkCRC(const char* data, boost::uint16_t receivedCRC);
+

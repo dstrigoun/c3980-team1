@@ -18,10 +18,11 @@
 --	DATE:			November 19, 2018
 --
 --	REVISIONS:		November 19, 2018
+--					November 23, 2018 - added sendCharacter(HWND hwnd)
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim, Dasha Strigoun
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun, Alexander Song
 --
 --	NOTES:
 --	This program will create the window and menu that the user can interact with.
@@ -30,17 +31,34 @@
 --
 --------------------------------------------------------------------------------------*/
 
-#include "Main.h"
 
-time_t LAST_EOT_RECEIVED;
+
+#include "Menu.h"
+#include "Main.h"
+#include "FileChooser.h"
+
+#define STRICT_TYPED_ITEMIDS
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <atlbase.h>
+#include <AtlConv.h>
+using namespace std;
+
+//time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
+DWORD eventHandlerThreadId;
 
 HANDLE hIdleTimeoutThrd;
+HANDLE eventHandlerThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
 LPCSTR lpszCommName = "com1";
 char str[80] = "";
+
+ifstream currUploadFile;
 
 #pragma warning (disable: 4096)
 
@@ -99,7 +117,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	triggerRandomWait();
 
 	//set LAST_EOT_RECEIVED to current time
-	LAST_EOT_RECEIVED = time(0);
+	//LAST_EOT_RECEIVED = time(0);
 
 	//open com port
 	if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
@@ -115,6 +133,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	//start thread with checkIdleTimeout
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)portHandle, 0, &eventHandlerThreadId);
+
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -153,7 +173,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
-			// handle file upload here
+			currUploadFile = openFile(&hwnd);
+			LPCSTR temp;
+			
+			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
+				MessageBox(hwnd, temp, "title", MB_OK);
+			}
+
 			char ctrlFrame[12] = {}; //for test; to be removed
 			char data[9] = { 22, 2, 3, 4, 5, 6, 7, 8, 9 }; //for test; to be removed
 
@@ -313,3 +339,5 @@ void sendCharacter(HWND hwnd) {
 	WriteFile(portHandle, str, 1, 0, NULL);
 	ReleaseDC(hwnd, hdc); // Release device context
 }
+
+

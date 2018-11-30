@@ -53,6 +53,12 @@
     <ClInclude Include="Sender.h">
       <Filter>Header Files\Physical</Filter>
     </ClInclude>
+    <ClInclude Include="EventHandler.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="FileChooser.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -66,6 +72,12 @@
     </ClCompile>
     <ClCompile Include="Sender.cpp">
       <Filter>Source Files\Physical</Filter>
+    </ClCompile>
+    <ClCompile Include="EventHandler.cpp">
+      <Filter>Source Files\DataLink</Filter>
+    </ClCompile>
+    <ClCompile Include="FileChooser.cpp">
+      <Filter>Source Files\Application</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
