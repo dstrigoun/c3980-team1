@@ -59,7 +59,7 @@ void receiveFrame(const char* frame) {
 --	Call this generic send method and send a frame based on parameters provided.
 --------------------------------------------------------------------------------------*/
 void sendFrame(char* frame, const char* data, int ctrl) {
-	(ctrl == NULL) ? generateCtrlFrame(frame, ctrl)
+	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
 		: generateDataFrame(frame, data);
 	//start sender thread here with the above created frame
 }
@@ -139,6 +139,9 @@ void readCtrlFrame(const char* frame) {
 			char ctrlFrame[1024];
 			sendFrame(ctrlFrame, nullptr, ACK);
 			curState = "RECEIVE";
+		}
+		else if (ctrlChar == ACK && ENQ_FLAG) {
+			curState = "SEND";
 		}
 	}
 }

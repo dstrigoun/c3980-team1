@@ -179,6 +179,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
 				MessageBox(hwnd, temp, "title", MB_OK);
 			}
+
+			char ctrlFrame[4] = {};
+			sendFrame(ctrlFrame, NULL, 5);
+			ENQ_FLAG = true;
 			
 			//char ctrlFrame[1024] = { 22, 4}; //for test; to be removed
 			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
