@@ -181,7 +181,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			}
 
 			char ctrlFrame[4] = {};
-			sendFrame(ctrlFrame, NULL, 5);
+			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;
 			
 			//char ctrlFrame[1024] = { 22, 4}; //for test; to be removed
