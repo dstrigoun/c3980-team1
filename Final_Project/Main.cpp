@@ -126,9 +126,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	char data2[1024];
 	generateCtrlFrame(data2, 70);
 	PWriteParams writeParams = new WriteParams(portHandle, data2);
-	hComm = portHandle;
-	senderThrd = CreateThread(NULL, 0, WriteToPort, (LPVOID)writeParams, 0, &senderThreadId);
+	
 
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -172,6 +172,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
 			//sendCharacter(hwnd);
+			curState.assign("SEND");
 			break;
 		}
 		break;

@@ -1,11 +1,11 @@
 #pragma once
 #include <Windows.h>
 #include "FrameHandler.h"
-//
-//DWORD WINAPI WriteToPort(LPVOID writeParams);
-//
+
 typedef struct WriteParams {
-	HANDLE hComm;
-	char* data;
-	WriteParams(HANDLE comm, char* data) : hComm(comm), data(data) {}
+	HANDLE portHandle;
+	char* frame;
+	WriteParams(HANDLE portHandle, char* frame) : portHandle(portHandle), frame(frame) {}
 }WriteParams, *PWriteParams;
+
+void sendFrameToPort(HANDLE portHandle, char* frame);

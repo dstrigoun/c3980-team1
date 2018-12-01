@@ -2,4 +2,6 @@
 #include "Main.h"
 #include "Sender.h"
 
-DWORD WINAPI WriteToPort(LPVOID writeParams);
+DWORD WINAPI sendFrame(LPVOID writeParams);
+
+DWORD WINAPI sendEOTs(LPVOID writeParams);

@@ -16,7 +16,6 @@ static DWORD CHECK_IDLE_TIMEOUT_MS = 5000;
 static std::string curState = "IDLE";
 static time_t LAST_EOT_RECEIVED = time(0);
 static bool ENQ_FLAG = false;
-static HANDLE hComm;
 
 int randomNumberGenerator(int min, int max);
 
