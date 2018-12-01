@@ -81,7 +81,7 @@
     </ClCompile>
     <ClCompile Include="WriteHandler.cpp">
       <Filter>Source Files\DataLink</Filter>
-    </ClInclude>
+    </ClCompile>
     <ClCompile Include="FileChooser.cpp">
       <Filter>Source Files\Application</Filter>
     </ClCompile>
