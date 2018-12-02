@@ -43,23 +43,24 @@ void receiveFrame(const char* frame) {
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--						November 30, 2018 - changed ctrl to be char
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void sendFrame(char* frame, const char* data, int ctrl)
+--	INTERFACE:		void sendFrame(char* frame, const char* data, char ctrl)
 --						char* frame - the frame to populate
 --						const char* data - data to send
---						int ctrl - control character to send
+--						char ctrl - control character to send
 --
 --	RETURNS:		void
 --
 --	NOTES:
 --	Call this generic send method and send a frame based on parameters provided.
 --------------------------------------------------------------------------------------*/
-void sendFrame(char* frame, const char* data, int ctrl) {
-	(ctrl == NULL) ? generateCtrlFrame(frame, ctrl)
+void sendFrame(char* frame, const char* data, char ctrl) {
+	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
 		: generateDataFrame(frame, data);
 	//start sender thread here with the above created frame
 }
@@ -106,10 +107,11 @@ void readDataFrame(const char* frame) {
 --
 --	REVISIONS:		November 24, 2018
 --					November 26, 2018 - receive EOT and ENQ and update state
+--					November 28, 2018 - receive ACK when ENQ was sent and update state
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim, Alexander Song
+--	PROGRAMMER:		Jason Kim, Alexander Song, Dasha Strigoun
 --
 --	INTERFACE:		void readCtrlFrame(const char* frame)
 --						const char* frame - control frame to read
@@ -139,6 +141,9 @@ void readCtrlFrame(const char* frame) {
 			char ctrlFrame[1024];
 			sendFrame(ctrlFrame, nullptr, ACK);
 			curState = "RECEIVE";
+		}
+		else if (ctrlChar == ACK && ENQ_FLAG) {
+			curState = "SEND";
 		}
 	}
 }
@@ -178,14 +183,15 @@ void generateDataFrame(char* dataFrame, const char* data) {
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--						November 30, 2018 - changed ctrl to be char
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void generateCtrlFrame(char* ctrlFrame, int ctrl)
+--	INTERFACE:		void generateCtrlFrame(char* ctrlFrame, char ctrl)
 --						char* ctrlFrame - the control frame
---						int ctrl - control character to send
+--						char ctrl - control character to send
 --
 --	RETURNS:		void
 --
@@ -194,7 +200,7 @@ void generateDataFrame(char* dataFrame, const char* data) {
 --	CTRL FRAME MAKEUP
 --	SYN | CTRL | DC1/2
 --------------------------------------------------------------------------------------*/
-void generateCtrlFrame(char* ctrlFrame, int ctrl) {
+void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = nextFrameToSend;
