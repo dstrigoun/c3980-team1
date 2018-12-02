@@ -23,7 +23,7 @@
 DWORD WINAPI WriteToPort(LPVOID hComm, LPVOID frameToSend)
 {
 	DWORD dwWrite = NULL;
-	DWORD dwBytesWritten = 0;
+	dwBytesWritten = 0;
 
 	DWORD dwEvent;
 	// commMask should be combined with Receiver and set in Main

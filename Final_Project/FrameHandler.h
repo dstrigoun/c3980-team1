@@ -17,6 +17,8 @@ static char nextFrameToReceive = DC1;
 static char nextFrameToSend = DC1;
 static bool isClearToSend = true;
 
+static DWORD dwBytesWritten = 0;
+
 void receiveFrame(const char* frame);
 void sendFrame(char* frame, const char* data, char ctrl);
 

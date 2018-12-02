@@ -62,6 +62,14 @@ void receiveFrame(const char* frame) {
 void sendFrame(char* frame, const char* data, char ctrl) {
 	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
 		: generateDataFrame(frame, data);
+
+	if (curState == "SEND" && ctrl == EOT) {
+		curState = "IDLE";
+		if (dwBytesWritten != 1024) { // not all 1024 bytes were written
+			char ctrlFrame[4] = {};
+			sendFrame(ctrlFrame, NULL, ENQ);
+		}
+	}
 	//start sender thread here with the above created frame
 }
 
