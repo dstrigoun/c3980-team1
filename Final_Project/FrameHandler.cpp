@@ -94,8 +94,9 @@ void readDataFrame(const char* frame) {
 
 		//check lastByte CRC if data is corrupt
 
-		char data[1021];
-		strncpy_s(data, frame + 2, 1020);
+		char data[10];
+		strncpy_s(data, frame + 2, 9);
+
 		//return the data portion to be appended to file
 	}
 }
@@ -171,9 +172,9 @@ void readCtrlFrame(const char* frame) {
 --	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
 void generateDataFrame(char* dataFrame, const char* data) {
-	/*dataFrame[0] = SYN;
+	dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
-	strcat_s(dataFrame, 1024, data);*/
+	strcat_s(dataFrame, 12, data);
 	// strcat CRC to dataframe
 }
 
