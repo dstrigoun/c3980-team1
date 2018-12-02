@@ -94,8 +94,31 @@ void readDataFrame(const char* frame) {
 
 		//check lastByte CRC if data is corrupt
 
-		char data[10];
-		strncpy_s(data, frame + 2, 9);
+		OutputDebugString("in readDataFrame");
+
+		char data[9] = {};
+		for (int i = 0; i < 9; i++) {
+			data[i] = frame[2 + i];
+		}
+
+		HANDLE h = CreateFile("test.txt",    // name of the file
+			GENERIC_WRITE, // open for writing
+			0,             // sharing mode, none in this case
+			0,             // use default security descriptor
+			CREATE_ALWAYS, // overwrite if exists
+			FILE_ATTRIBUTE_NORMAL,
+			0);
+
+		LPDWORD written = 0;
+		WriteFile(h, data, 9, written, 0);
+
+		if (h)
+		{
+			OutputDebugString("create file was successful\n");
+			CloseHandle(h);
+		}
+
+		//strncpy_s(data, frame + 2, 9);
 
 		//return the data portion to be appended to file
 	}
@@ -172,9 +195,21 @@ void readCtrlFrame(const char* frame) {
 --	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
 void generateDataFrame(char* dataFrame, const char* data) {
-	dataFrame[0] = SYN;
-	dataFrame[1] = nextFrameToSend;
-	strcat_s(dataFrame, 12, data);
+	char localData[12] = {};
+	*localData = *dataFrame;
+
+	localData[0] = SYN;
+	localData[1] = nextFrameToSend;
+
+	for (int i = 0; i < 9; i++) {
+		localData[2 + i] = data[i];
+	}
+
+	//*dataFrame = *localData;
+	for (int i = 0; i < 12; i++) {
+		dataFrame[i] = localData[i];
+	}
+
 	// strcat CRC to dataframe
 }
 
