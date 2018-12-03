@@ -180,11 +180,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				MessageBox(hwnd, temp, "title", MB_OK);
 			}
 
-			char ctrlFrame[12] = {}; //for test; to be removed
-			char data[9] = { 22, 2, 3, 4, 5, 6, 7, 8, 9 }; //for test; to be removed
+			char ctrlFrame[4] = {};
+			sendFrame(ctrlFrame, NULL, ENQ);
+			ENQ_FLAG = true;
 
-			generateDataFrame(ctrlFrame, data); //for test; to be removed
-			receiveFrame(ctrlFrame); //for test; to be removed
+			char dataFrame[12] = {}; //for test; to be removed
+			char data[9] = { 22, 2, 3, 4, 5, 6, 7, 8, 9 }; //for test; to be removed
+			generateDataFrame(dataFrame, data); //for test; to be removed
+			receiveFrame(dataFrame); //for test; to be removed
+
 			break;
 		}
 		break;

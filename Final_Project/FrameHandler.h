@@ -19,14 +19,13 @@ static char nextFrameToSend = DC1;
 static bool isClearToSend = true;
 
 void receiveFrame(const char* frame);
-void sendFrame(char* frame, const char* data, int ctrl);
+void sendFrame(char* frame, const char* data, char ctrl);
 
 void readDataFrame(const char* frame);
 void readCtrlFrame(const char* frame);
 
 void generateDataFrame(char* dataFrame, const char* data);
-void generateCtrlFrame(char* ctrlFrame, int ctrl);
+void generateCtrlFrame(char* ctrlFrame, char ctrl);
 
 boost::uint16_t buildCRC(const char* data);
 bool checkCRC(const char* data, boost::uint16_t receivedCRC);
-
