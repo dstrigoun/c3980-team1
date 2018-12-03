@@ -65,10 +65,7 @@ void sendFrame(char* frame, const char* data, char ctrl) {
 
 	if (curState == "SEND" && ctrl == EOT) {
 		curState = "IDLE";
-		if (unfinishedTransmission) { // check whether everything twas sent
-			char ctrlFrame[4] = {};
-			sendFrame(ctrlFrame, NULL, ENQ);
-		}
+		unfinishedTransmission = true;
 	}
 	//start sender thread here with the above created frame
 }
@@ -126,6 +123,11 @@ void readDataFrame(const char* frame) {
 		//-----------------------------------------------------
 
 		//return the data portion to be appended to file
+		int data_size = sizeof(data) / sizeof(*data);
+
+		for (int i = 0; i < data_size; ++i)
+			if (data[i] == -1)
+				unfinishedTransmission = false;
 	}
 }
 
