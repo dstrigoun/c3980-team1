@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
+#include <boost/crc.hpp>
 #include "Main.h"
 
 
@@ -27,3 +28,6 @@ void readCtrlFrame(const char* frame);
 
 void generateDataFrame(char* dataFrame, const char* data);
 void generateCtrlFrame(char* ctrlFrame, char ctrl);
+
+boost::uint16_t buildCRC(const char* data);
+bool checkCRC(const char* data, boost::uint16_t receivedCRC);
