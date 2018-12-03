@@ -127,9 +127,12 @@ void readDataFrame(const char* frame) {
 		// Check for EOF (-1) in the data
 		int data_size = sizeof(data) / sizeof(*data);
 
-		for (int i = 0; i < data_size; ++i)
-			if (data[i] == -1)
+		for (int i = 0; i < data_size; ++i) {
+			if (data[i] == -1) {
+				OutputDebugString("Found EOF in data\n");
 				unfinishedTransmission = false;
+			}
+		}
 	}
 }
 
