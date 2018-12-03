@@ -63,9 +63,11 @@ void sendFrame(char* frame, const char* data, char ctrl) {
 	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
 		: generateDataFrame(frame, data);
 
+	unfinishedTransmission = true;
+
 	if (curState == "SEND" && ctrl == EOT) {
 		curState = "IDLE";
-		unfinishedTransmission = true;
+		/*unfinishedTransmission = true;*/
 	}
 	//start sender thread here with the above created frame
 }
@@ -132,6 +134,10 @@ void readDataFrame(const char* frame) {
 				OutputDebugString("Found EOF in data\n");
 				unfinishedTransmission = false;
 			}
+		}
+
+		if (unfinishedTransmission) {
+			OutputDebugString("EOF not found\n");
 		}
 	}
 }
