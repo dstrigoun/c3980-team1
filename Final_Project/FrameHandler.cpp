@@ -123,6 +123,8 @@ void readDataFrame(const char* frame) {
 		//-----------------------------------------------------
 
 		//return the data portion to be appended to file
+
+		// Check for EOF (-1) in the data
 		int data_size = sizeof(data) / sizeof(*data);
 
 		for (int i = 0; i < data_size; ++i)
