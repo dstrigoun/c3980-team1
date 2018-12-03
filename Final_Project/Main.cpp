@@ -183,11 +183,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			char ctrlFrame[4] = {};
 			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;
-			
-			//char ctrlFrame[1024] = { 22, 4}; //for test; to be removed
-			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
-			//receiveFrame(ctrlFrame); //for test; to be removed
-			//sendCharacter(hwnd);
+
+			char dataFrame[12] = {}; //for test; to be removed
+			char data[9] = { 22, 2, 3, 4, 5, 6, 7, 8, 9 }; //for test; to be removed
+			generateDataFrame(dataFrame, data); //for test; to be removed
+			receiveFrame(dataFrame); //for test; to be removed
+
 			break;
 		}
 		break;

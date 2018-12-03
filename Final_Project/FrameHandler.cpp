@@ -71,10 +71,12 @@ void sendFrame(char* frame, const char* data, char ctrl) {
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--						November 27, 2018 - CRC code
+--						November 29, 2018 - use dummy CRC byte instead
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
 --	INTERFACE:		void readDataFrame(const char* frame) 
 --						const char* frame - data frame to read
@@ -92,10 +94,29 @@ void readDataFrame(const char* frame) {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
 		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
 
-		//check lastByte CRC if data is corrupt
+		//extract data from frame
+		char data[10] = {};
+		strncpy_s(data, frame + 2, 9);
 
-		char data[1021];
-		strncpy_s(data, frame + 2, 1020);
+		//check for dummy CRC bit
+		if (frame[11] == 1) {
+			OutputDebugString("Dummy CRC bit works\n");
+		}
+
+		// CRC code that does not work
+		//-----------------------------------------------------
+		//char cur[1024] = {};
+		//sprintf_s(cur, "original CRC: %x", receivedCRC);
+		//OutputDebugString(cur);
+		//OutputDebugString("\n");
+
+		////check lastByte CRC if data is corrupt
+		//if (checkCRC(data, (boost::uint16_t)receivedCRC)) {
+		//	OutputDebugString("CRC passed\n");
+		//}
+		//OutputDebugString("CRC failed\n");
+		//-----------------------------------------------------
+
 		//return the data portion to be appended to file
 	}
 }
@@ -154,10 +175,12 @@ void readCtrlFrame(const char* frame) {
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--						November 27, 2018 - CRC code
+--						November 29, 2018 - use dummy CRC byte instead
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
 --	INTERFACE:		void generateDataFrame(char* dataFrame, const char* data) 
 --						char* dataFrame - the data frame
@@ -171,10 +194,25 @@ void readCtrlFrame(const char* frame) {
 --	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
 void generateDataFrame(char* dataFrame, const char* data) {
-	/*dataFrame[0] = SYN;
+	dataFrame[0] = SYN;
 	dataFrame[1] = nextFrameToSend;
-	strcat_s(dataFrame, 1024, data);*/
-	// strcat CRC to dataframe
+	strcat_s(dataFrame, 12, data);
+
+	//append the dummy CRC bit
+	char dummyCRC = 1;
+	dataFrame[11] = dummyCRC;
+
+	// CRC code that does not work
+	//------------------------------------------------------
+	//boost::uint16_t var = buildCRC(data);
+
+	//char msgbuf[1024];
+	//sprintf_s(msgbuf, "%x", (unsigned)var);
+	//OutputDebugString(msgbuf);
+	//OutputDebugString("\n");
+
+	//strcat_s(dataFrame, 1021, msgbuf);
+	//-------------------------------------------------------
 }
 
 /*-------------------------------------------------------------------------------------
@@ -204,4 +242,69 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = nextFrameToSend;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	buildCRC
+--
+--	DATE:			November 26, 2018
+--
+--	REVISIONS:		November 26, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		char* buildCRC(const char* data)
+--						const char* data - data to send
+--
+--	RETURNS:		boost::uint16_t - generated CRC based on data
+--
+--	NOTES:
+--  Call this to build CRC for set of data
+--------------------------------------------------------------------------------------*/
+boost::uint16_t buildCRC(const char* data) {
+	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
+
+	result.process_bytes(data, 1021);
+
+	return result.checksum();
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	checkCRC
+--
+--	DATE:			November 26, 2018
+--
+--	REVISIONS:		November 26, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		bool checkCRC(const char* data, const char* receivedCRC)
+--						const char* data - data to send
+--						const char* receivedCRC - CRC checksum at the end of frame
+--
+--	RETURNS:		bool - whether receivedCRC and calculated CRC match
+--
+--	NOTES:
+--  Call this to check the CRC in the last byte of the data frame
+--------------------------------------------------------------------------------------*/
+bool checkCRC(const char* data, boost::uint16_t receivedCRC) {
+	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
+
+	result.process_bytes(data, 1021);
+
+	char expected[64] = {};
+	sprintf_s(expected, "expected CRC: %u", (unsigned)receivedCRC);
+	OutputDebugString(expected);
+	OutputDebugString("\n");
+
+	char msgbuf[1024];
+	sprintf_s(msgbuf, "calculated CRC: %u", (unsigned)result.checksum());
+	OutputDebugString(msgbuf);
+	OutputDebugString("\n");
+
+	return result.checksum() == receivedCRC;
 }
