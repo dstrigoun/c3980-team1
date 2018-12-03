@@ -183,10 +183,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			// handle file upload here
-			char ctrlFrame[1024]; //for test; to be removed
+			//char ctrlFrame[1024]; //for test; to be removed
 			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
-			receiveFrame(ctrlFrame); //for test; to be removed
-			sendCharacter(hwnd);
+			//receiveFrame(ctrlFrame); //for test; to be removed
+			//sendCharacter(hwnd);
 			currUploadFile = openFile(&hwnd);
 			LPCSTR temp;
 			string s;
@@ -199,7 +199,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			receiveFrame(ctrlFrame); //for test; to be removed
 			//sendCharacter(hwnd);
-			curState.assign("SEND");
+			curState = "SEND";
 			break;
 		}
 		break;
