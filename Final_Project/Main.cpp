@@ -174,12 +174,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			currUploadFile = openFile(&hwnd);
+			unfinishedTransmission = true;
 			LPCSTR temp;
 			
 			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
 				MessageBox(hwnd, temp, "title", MB_OK);
 			}
 
+			unfinishedTransmission = false;
 			char ctrlFrame[4] = {};
 			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;

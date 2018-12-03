@@ -65,7 +65,7 @@ void sendFrame(char* frame, const char* data, char ctrl) {
 
 	if (curState == "SEND" && ctrl == EOT) {
 		curState = "IDLE";
-		if (dwBytesWritten != 1024) { // not all 1024 bytes were written
+		if (unfinishedTransmission) { // check whether everything twas sent
 			char ctrlFrame[4] = {};
 			sendFrame(ctrlFrame, NULL, ENQ);
 		}
