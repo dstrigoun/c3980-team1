@@ -62,6 +62,7 @@ void receiveFrame(const char* frame) {
 void sendFrame(char* frame, const char* data, char ctrl) {
 	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
 		: generateDataFrame(frame, data);
+
 	//start sender thread here with the above created frame
 }
 
@@ -118,6 +119,20 @@ void readDataFrame(const char* frame) {
 		//-----------------------------------------------------
 
 		//return the data portion to be appended to file
+
+		// Check for EOF (-1) in the data
+		int data_size = sizeof(data) / sizeof(*data);
+
+		for (int i = 0; i < data_size; ++i) {
+			if (data[i] == -1) {
+				OutputDebugString("Found EOF in data\n");
+				unfinishedTransmission = false;
+			}
+		}
+
+		if (unfinishedTransmission) {
+			OutputDebugString("EOF not found\n");
+		}
 	}
 }
 
@@ -165,6 +180,7 @@ void readCtrlFrame(const char* frame) {
 		}
 		else if (ctrlChar == ACK && ENQ_FLAG) {
 			curState = "SEND";
+			unfinishedTransmission = true;
 		}
 	}
 }
