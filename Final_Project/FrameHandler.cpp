@@ -63,12 +63,6 @@ void sendFrame(char* frame, const char* data, char ctrl) {
 	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
 		: generateDataFrame(frame, data);
 
-	unfinishedTransmission = true;
-
-	if (curState == "SEND" && ctrl == EOT) {
-		curState = "IDLE";
-		/*unfinishedTransmission = true;*/
-	}
 	//start sender thread here with the above created frame
 }
 
@@ -186,6 +180,7 @@ void readCtrlFrame(const char* frame) {
 		}
 		else if (ctrlChar == ACK && ENQ_FLAG) {
 			curState = "SEND";
+			unfinishedTransmission = true;
 		}
 	}
 }
