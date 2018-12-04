@@ -1,5 +1,8 @@
 #include "EventHandler.h"
 
+DWORD receiveTOThreadId;
+HANDLE hReceiveTimeoutThrd;
+
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	stopEventHandlerThrd
 --
@@ -51,6 +54,9 @@ DWORD WINAPI pollForEvents(LPVOID portHandle)
 	isListening = true;
 	SetCommMask(portHandle, EV_RXCHAR | EV_CTS);
 
+	hReceiveTimeoutThrd = CreateThread(NULL, 0, checkReceiveTimeout, 0, 0, &receiveTOThreadId);
+	lastFrameReceived = time(0);
+
 	while (isListening)
 	{
 		if (WaitCommEvent(portHandle, &dwEvent, NULL))
@@ -58,6 +64,7 @@ DWORD WINAPI pollForEvents(LPVOID portHandle)
 			if (dwEvent & EV_RXCHAR)
 			{
 				ReadFromPort(portHandle);
+				lastFrameReceived = time(0);
 			}
 		}
 		else
@@ -66,6 +73,7 @@ DWORD WINAPI pollForEvents(LPVOID portHandle)
 			break;
 		}
 	}
+	CloseHandle(hReceiveTimeoutThrd);
 
 	return 0;
 }

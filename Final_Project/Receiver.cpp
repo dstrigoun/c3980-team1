@@ -33,3 +33,22 @@ void ReadFromPort(LPVOID portHandle)
 		}
 	} while (dwRead == 1024);
 }
+
+DWORD WINAPI checkReceiveTimeout(LPVOID n) {
+	bool isReceiving = true;
+	while (isReceiving) {
+		time_t currentTime = time(0);
+		if (currentTime - lastFrameReceived >= RECEIVE_TIMEOUT_TIME_S) {
+			char ctrlFrame[4] = {};
+			sendFrame(ctrlFrame, NULL, EOT);
+			curState = "IDLE";
+			isReceiving = false;
+			isListening = false;
+			OutputDebugString("ReceiveTO");
+		}
+
+		//Sleep(CHECK_IDLE_TIMEOUT_MS);
+	}
+
+	return 0;
+}

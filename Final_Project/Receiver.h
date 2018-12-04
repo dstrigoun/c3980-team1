@@ -2,6 +2,5 @@
 #include <Windows.h>
 #include "FrameHandler.h"
 
-HANDLE receiveTO;
-
+DWORD WINAPI checkReceiveTimeout(LPVOID n);
 void ReadFromPort(LPVOID portHandle);
