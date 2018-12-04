@@ -17,7 +17,7 @@ static char nextFrameToSend = DC1;
 static bool isClearToSend = true;
 
 void receiveFrame(const char* frame);
-void sendFrame(char* frame, const char* data, int ctrl);
+void sendFrame(char* frame, const char* data, char ctrl);
 
 void readDataFrame(const char* frame);
 void readCtrlFrame(const char* frame);
