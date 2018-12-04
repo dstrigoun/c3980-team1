@@ -23,4 +23,4 @@ void readDataFrame(const char* frame);
 void readCtrlFrame(const char* frame);
 
 void generateDataFrame(char* dataFrame, const char* data);
-void generateCtrlFrame(char* ctrlFrame, int ctrl);
+void generateCtrlFrame(char* ctrlFrame, char ctrl);

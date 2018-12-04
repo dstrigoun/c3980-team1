@@ -34,3 +34,5 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 void sendCharacter(HWND hwnd);
 
+void updateLastEOTReceived(time_t receivedTime);
+
