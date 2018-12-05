@@ -2,6 +2,6 @@
 #include <Windows.h>
 #include "FrameHandler.h"
 
-HANDLE receiveTO;
+static HANDLE receiveTO;
 
 void ReadFromPort(LPVOID portHandle);
