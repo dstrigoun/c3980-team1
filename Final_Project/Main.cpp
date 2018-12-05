@@ -135,6 +135,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)portHandle, 0, &eventHandlerThreadId);
 
+	HANDLE hFile = CreateFile("test.txt", GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_APPEND_DATA, 0);
+	CloseHandle(hFile);
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -195,9 +197,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			//sendCharacter(hwnd);
 
 			char dataFrame[12] = {}; //for test; to be removed
-			char data[9] = { 22, 2, 3, 4, 5, 6, 7, 8, 9 }; //for test; to be removed
+			char data[9] = { 'p', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'l' }; //for test; to be removed
 			generateDataFrame(dataFrame, data); //for test; to be removed
 			receiveFrame(dataFrame); //for test; to be removed
+
+			char dataFrame2[12] = {}; //for test; to be removed
+			char data2[9] = { 'w', 'h', 'a', 't', 't', 'h', 'e', 'y', 'o' }; //for test; to be removed
+			generateDataFrame(dataFrame2, data2); //for test; to be removed
+			receiveFrame(dataFrame2); //for test; to be removed
 
 			break;
 		}

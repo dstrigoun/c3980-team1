@@ -101,22 +101,17 @@ void readDataFrame(const char* frame) {
 			data[i] = frame[2 + i];
 		}
 
-		HANDLE h = CreateFile("test.txt",    // name of the file
-			GENERIC_WRITE, // open for writing
-			0,             // sharing mode, none in this case
-			0,             // use default security descriptor
-			CREATE_ALWAYS, // overwrite if exists
-			FILE_ATTRIBUTE_NORMAL,
-			0);
+		HANDLE hFile = CreateFile("test.txt", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_APPEND_DATA, 0);
+
+		if (hFile)
+		{
+			OutputDebugString("created hFile successfully\n");
+		}
 
 		LPDWORD written = 0;
-		WriteFile(h, data, 9, written, 0);
+		WriteFile(hFile, data, 9, written, 0);
 
-		if (h)
-		{
-			OutputDebugString("create file was successful\n");
-			CloseHandle(h);
-		}
+		CloseHandle(hFile);
 
 		//strncpy_s(data, frame + 2, 9);
 
