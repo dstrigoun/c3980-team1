@@ -33,7 +33,7 @@ void receiveFrame(const char* frame) {
 		}
 	}
 	else {
-			MessageBox(NULL, "Frame Corrupt, 1st Byte not SYN", "", MB_OK);
+		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
 	}
 }
 
@@ -158,18 +158,16 @@ void readDataFrame(const char* frame) {
 --	Call this to read a control frame and handle behaviour based on each control char
 --------------------------------------------------------------------------------------*/
 void readCtrlFrame(const char* frame) {
-	int ctrlChar = (int)frame[1];
-	int dcChar = (int)frame[2];
-	char cur[16] = "";
-	sprintf_s(cur, "%d", ctrlChar);
-	OutputDebugString(cur);
-	OutputDebugString("\n");
+	char ctrlChar = frame[1];
+	char dcChar = frame[2];
+
 	// handle behaviour based on control char received
 	if (curState == "IDLE") {
 		if (ctrlChar == EOT) {
 			LAST_EOT_RECEIVED = time(0);
 			char cur2[16] = "";
 			sprintf_s(cur2, "%d", LAST_EOT_RECEIVED);
+			updateLastEOTReceived(time(0));
 			OutputDebugString(cur2);
 			OutputDebugString("\n");
 		}
