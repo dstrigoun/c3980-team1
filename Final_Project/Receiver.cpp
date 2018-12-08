@@ -1,18 +1,18 @@
 #include "Receiver.h"
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	ReadFromPort
+--	FUNCTION:	readFromPort
 --
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--					December 03, 2018 - refactored for better layered architechture
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
 --	PROGRAMMER:		Jason Kim
 --
---	INTERFACE:		DWORD WINAPI ReadFromPort(LPVOID hComm)
---						LPVOID hComm - port to be used for writing
+--	INTERFACE:		void ReadFromPort(LPVOID portHandle)
 --
 --	RETURNS:		void
 --
@@ -20,16 +20,14 @@
 --	Pass this thread function to Receiver thread to handle a received char event
 --	and handle the frame received.
 --------------------------------------------------------------------------------------*/
-void ReadFromPort(LPVOID portHandle)
-{
-	DWORD dwRead = NULL;
-	char chRead[1024];
-	do
-	{
-		ReadFile(portHandle, chRead, 1024, &dwRead, NULL);
-		if (chRead != NULL)
-		{
-			receiveFrame(chRead);
+void readFromPort(PREADTHREADPARAMS readTP) {
+	char readStr[1024];
+	if (!ReadFile(readTP->hComm, readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
+		OutputDebugStringA("FAILED : read from serial");
+	}
+	else {
+		if (*(readTP->numBytesRead) > 0) {
+			receiveFrame(readStr, readTP->hwnd);
 		}
-	} while (dwRead == 1024);
+	}
 }

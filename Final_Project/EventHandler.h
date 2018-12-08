@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include "Main.h"
 #include "Receiver.h"
+#include "ReadThreadParams.h"
 
-static bool isListening = false;
+class Receiver;
 
 DWORD WINAPI pollForEvents(LPVOID portHandle);
-void stopEventHandlerThrd();

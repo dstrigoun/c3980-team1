@@ -1,30 +1,6 @@
 #include "EventHandler.h"
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	stopEventHandlerThrd
---
---	DATE:			November 26, 2018
---
---	REVISIONS:		November 26, 2018 (Initial version)
---
---	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
---
---	PROGRAMMER:		Jason Kim
---
---	INTERFACE:		void StopThread()
---
---	RETURNS:		void
---
---	NOTES:
---	Call this function to set isListening to false to trigger the running thread to exit
---	and close the thread handle after.
---------------------------------------------------------------------------------------*/
-void stopEventHandlerThrd()
-{
-	isListening = false;
-}
-
-/*-------------------------------------------------------------------------------------
 --	FUNCTION:	pollForEvents
 --
 --	DATE:			November 26, 2018
@@ -45,27 +21,27 @@ void stopEventHandlerThrd()
 --	characters received via the connected port.
 --	Any data received is passed to receiveFrame to be hanl.
 --------------------------------------------------------------------------------------*/
-DWORD WINAPI pollForEvents(LPVOID portHandle)
+DWORD WINAPI pollForEvents(LPVOID n)
 {
-	DWORD dwEvent;
-	isListening = true;
-	SetCommMask(portHandle, EV_RXCHAR | EV_CTS);
+	PREADTHREADPARAMS readTP;
+	readTP = PREADTHREADPARAMS(n);
+	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
+	SetCommTimeouts(readTP->hComm, &timeouts);
+	DWORD waitResult;
 
-	while (isListening)
-	{
-		if (WaitCommEvent(portHandle, &dwEvent, NULL))
+	while (1) {
+		waitResult = WaitForSingleObject(readTP->stopThreadEvent, 10);
+		switch (waitResult)
 		{
-			if (dwEvent & EV_RXCHAR)
-			{
-				ReadFromPort(portHandle);
-			}
-		}
-		else
-		{
-			MessageBox(NULL, "Error Reading from port", "", MB_OK);
+		case WAIT_TIMEOUT:
+			readFromPort(readTP);
+			break;
+		case WAIT_OBJECT_0:
+			ExitThread(0);
+			break;
+		default:
 			break;
 		}
 	}
-
 	return 0;
 }

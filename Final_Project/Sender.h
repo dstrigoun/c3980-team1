@@ -2,4 +2,11 @@
 #include <Windows.h>
 #include "FrameHandler.h"
 
-DWORD WINAPI WriteToPort(LPVOID charToWrite, LPVOID frameToSend);
+typedef struct WriteParams {
+	HANDLE portHandle;
+	char* frame;
+	size_t frameLen;
+	WriteParams(HANDLE portHandle, char* frame, size_t frameLen) : portHandle(portHandle), frame(frame), frameLen(frameLen) {}
+}WriteParams, *PWriteParams;
+
+void sendFrameToPort(HANDLE portHandle, char* frame, size_t frameLen);
