@@ -183,6 +183,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tClicked upload\n";
+			file.close();
+
 			currUploadFile = openFile(&hwnd);
 			LPCSTR temp;
 			
@@ -193,26 +198,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			char ctrlFrame[4] = {};
 			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;
-			
-			//char testFrame[12] = {};
-			//char anotherTestFrame[9] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-			//generateDataFrame(testFrame, anotherTestFrame);
-			//receiveFrame(testFrame);
 
-			//char ctrlFrame[1024] = { 22, 4}; //for test; to be removed
-			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
-			//receiveFrame(ctrlFrame); //for test; to be removed
-			//sendCharacter(hwnd);
 
 			char dataFrame[12] = {}; //for test; to be removed
 			char data[9] = { 'p', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'l' }; //for test; to be removed
 			generateDataFrame(dataFrame, data); //for test; to be removed
-			receiveFrame(dataFrame, &hwnd); //for test; to be removed
+			receiveFrame(dataFrame); //for test; to be removed
 
 			char dataFrame2[12] = {}; //for test; to be removed
-			char data2[9] = { 'w', 'h', 'a', 't', 't', 'h', 'e', 'y', 'o' }; //for test; to be removed
-			generateDataFrame(dataFrame2, data2); //for test; to be removed
-			receiveFrame(dataFrame2, &hwnd); //for test; to be removed
+			char reallyDifferent[9] = { 'w', 'h', 'a', 't', 't', 'h', 'e', 'y', 'o' }; //for test; to be removed
+			generateDataFrame(dataFrame2, reallyDifferent); //for test; to be removed
+			receiveFrame(dataFrame2); //for test; to be removed
 
 			break;
 		}

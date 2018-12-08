@@ -91,16 +91,6 @@ std::ifstream openFile(HWND *hWnd)
 									{
 										hFile.open(W2A(pszFilePath));
 
-										/*std::string line;
-										while (std::getline(hFile, line))
-											lines.push_back(line);
-
-										for (std::string s : lines) {
-											LPCSTR ss = s.c_str();
-											OutputDebugString(ss);
-											MessageBox(*hWnd, ss, W2A(pszFilePath), MB_OK);
-*/
-										//}
 										CoTaskMemFree(pszFilePath);
 									}
 									psiResult->Release();
