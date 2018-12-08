@@ -1,6 +1,13 @@
 #pragma once
 
 
+#define STRICT_TYPED_ITEMIDS
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <atlbase.h>
+#include <AtlConv.h>
+
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>
@@ -9,6 +16,7 @@
 #include "FrameHandler.h"
 #include "EventHandler.h"
 #include "WriteHandler.h"
+#include "FileChooser.h"
 
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;

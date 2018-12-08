@@ -4,6 +4,7 @@
 #include <string.h>
 #include <boost/crc.hpp>
 #include "Main.h"
+#include "WriteHandler.h"
 
 static const char SYN = 22;
 static const char DC1 = 17;

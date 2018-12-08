@@ -68,6 +68,7 @@ void sendFrame(char* frame, const char* data, char ctrl) {
 		: generateDataFrame(frame, data);
 
 	//start sender thread here with the above created frame
+	
 }
 
 /*-------------------------------------------------------------------------------------
@@ -166,7 +167,8 @@ void readCtrlFrame(const char* frame) {
 	char dcChar = frame[2];
 
 	// handle behaviour based on control char received
-	if (curState == "IDLE") {
+	if (curState == "IDLE") 
+	{
 		if (ctrlChar == EOT) {
 			LAST_EOT_RECEIVED = time(0);
 			char cur2[16] = "";
@@ -184,6 +186,26 @@ void readCtrlFrame(const char* frame) {
 			curState = "SEND";
 			unfinishedTransmission = true;
 		}
+	}
+	else if (curState == "SEND") 
+	{
+		switch (ctrlChar)
+		{
+		case ACK:
+			//update DC1/DC2
+			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
+			//trigger send frame
+			sendDataFrame();
+			break;
+		case NAK:
+			//trigger resend frame
+			resendDataFrame();
+			break;
+		}
+	}
+	else if (curState == "RECEIVE") 
+	{
+
 	}
 }
 

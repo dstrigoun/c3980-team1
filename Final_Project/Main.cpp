@@ -31,19 +31,8 @@
 --
 --------------------------------------------------------------------------------------*/
 
-
-
-#include "Menu.h"
 #include "Main.h"
-#include "FileChooser.h"
 
-#define STRICT_TYPED_ITEMIDS
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <atlbase.h>
-#include <AtlConv.h>
 using namespace std;
 
 //time_t LAST_EOT_RECEIVED;
@@ -184,17 +173,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
-			currUploadFile = openFile(&hwnd);
-			LPCSTR temp;
+			/*LPCSTR temp;
 			
 			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
 				MessageBox(hwnd, temp, "title", MB_OK);
-			}
+			}*/
 
+			
 			char ctrlFrame[4] = {};
 			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;
-			
+
+
+			currUploadFile = openFile(&hwnd);
+			initWriteHandler(&currUploadFile, &portHandle);
+
 			break;
 		}
 		break;

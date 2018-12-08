@@ -1,5 +1,13 @@
 #include "WriteHandler.h"
 
+void initWriteHandler(ifstream* file, HANDLE* port)  
+{
+	PcurrUploadFile = file;
+	Pport = port;
+	numFramesSent = 0;
+	numFramesReSent = 0;
+};
+
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	sendFrame
 --
@@ -21,15 +29,24 @@
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI sendFrame(LPVOID writeParams)
 {
-	DWORD dwWrite = NULL;
-	DWORD dwBytesWritten = 0;
-
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 	
 	sendFrameToPort(wp->portHandle,wp->frame, wp->frameLen);
 
 	return 0;
+}
+
+void sendDataFrame()
+{
+	sendFrameToPort(&Pport, (char*) getPayload(PcurrUploadFile)[0],1024);
+	numFramesSent++;
+}
+
+void resendDataFrame() 
+{
+	sendFrameToPort(&Pport, (char*) lastFrameSent, 1024);
+	numFramesReSent++;
 }
 
 /*-------------------------------------------------------------------------------------
@@ -53,9 +70,6 @@ DWORD WINAPI sendFrame(LPVOID writeParams)
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI sendEOTs(LPVOID writeParams)
 {
-	DWORD dwWrite = NULL;
-	DWORD dwBytesWritten = 0;
-
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 

@@ -6,6 +6,7 @@ typedef struct WriteParams {
 	HANDLE portHandle;
 	char* frame;
 	size_t frameLen;
+	WriteParams() {};
 	WriteParams(HANDLE portHandle, char* frame, size_t frameLen) : portHandle(portHandle), frame(frame), frameLen(frameLen) {}
 }WriteParams, *PWriteParams;
 

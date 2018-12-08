@@ -12,7 +12,7 @@
 --
 --	PROGRAMMER:		Jason Kim
 --
---	INTERFACE:		void ReadFromPort(LPVOID portHandle)
+--	INTERFACE:		void readFromPort(LPVOID portHandle)
 --
 --	RETURNS:		void
 --
