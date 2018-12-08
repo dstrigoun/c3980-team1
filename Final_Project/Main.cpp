@@ -204,15 +204,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			ENQ_FLAG = true;
 
 
-			char dataFrame[12] = {}; //for test; to be removed
-			char data[9] = { 'p', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'l' }; //for test; to be removed
-			generateDataFrame(dataFrame, data); //for test; to be removed
-			receiveFrame(dataFrame); //for test; to be removed
-
-			char dataFrame2[12] = {}; //for test; to be removed
-			char reallyDifferent[9] = { 'w', 'h', 'a', 't', 't', 'h', 'e', 'y', 'o' }; //for test; to be removed
-			generateDataFrame(dataFrame2, reallyDifferent); //for test; to be removed
-			receiveFrame(dataFrame2); //for test; to be removed
+			char dataFrame3[1024] = {}; //for test; to be removed
+			char reallyDifferent2[1021] = { 'w', 'o', 'w', -1 }; //for test; to be removed
+			generateDataFrame(dataFrame3, reallyDifferent2); //for test; to be removed
+			receiveFrame(dataFrame3); //for test; to be removed
 
 			break;
 		}

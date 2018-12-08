@@ -104,8 +104,12 @@ void readDataFrame(const char* frame) {
 		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
 
 		//check for dummy CRC bit
-		if (frame[11] == 1) {
+		if (frame[1023] == 1) {
 			OutputDebugString("Dummy CRC bit works\n");
+			std::ofstream log_file;
+			log_file.open("log.txt", std::fstream::app);
+			log_file << time(0) << ":\tCRC bit is correct.\n";
+			log_file.close();
 		}
 
 		// CRC code that does not work
@@ -124,17 +128,10 @@ void readDataFrame(const char* frame) {
 
 		OutputDebugString("in readDataFrame");
 
-		char data[9] = {};
-		for (int i = 0; i < 9; i++) {
+		char data[1021] = {};
+		for (int i = 0; i < 1021; i++) {
 			data[i] = frame[2 + i];
 		}
-
-		std::ofstream file;
-		file.open("test.txt", std::fstream::app);
-		for (int i = 0; i < 9; i++) {
-			file << data[i];
-		}
-		file.close();
 
 		// Check for EOF (-1) in the data
 		int data_size = sizeof(data) / sizeof(*data);
@@ -149,12 +146,16 @@ void readDataFrame(const char* frame) {
 				log_file.close();
 
 				unfinishedTransmission = false;
+				data_size = i;
 			}
 		}
 
-		if (unfinishedTransmission) {
-			OutputDebugString("EOF not found\n");
+		std::ofstream file;
+		file.open("test.txt", std::fstream::app);
+		for (int i = 0; i < data_size; i++) {
+			file << data[i];
 		}
+		file.close();
 	}
 }
 
@@ -248,25 +249,30 @@ void readCtrlFrame(const char* frame) {
 --------------------------------------------------------------------------------------*/
 void generateDataFrame(char* dataFrame, const char* data) {
 	// use local data frame to append data
-	char localData[12] = {};
+	char localData[1024] = {};
 	*localData = *dataFrame;
 
 	localData[0] = SYN;
 	localData[1] = nextFrameToSend;
 
 	// copy data into local data frame
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < 1021; i++) {
 		localData[2 + i] = data[i];
 	}
 	
 	// copy local data frame into data frame
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < 1024; i++) {
 		dataFrame[i] = localData[i];
 	}
 
 	//append the dummy CRC bit
 	char dummyCRC = 1;
-	dataFrame[11] = dummyCRC;
+	dataFrame[1023] = dummyCRC;
+
+	std::ofstream log_file;
+	log_file.open("log.txt", std::fstream::app);
+	log_file << time(0) << ":\tGenerated CRC bit is: " << dummyCRC << "\n";
+	log_file.close();
 
 	// CRC code that does not work
 	//------------------------------------------------------
