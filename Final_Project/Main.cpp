@@ -132,17 +132,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	cc.dwSize = sizeof(COMMCONFIG);
 	cc.wVersion = 0x100;
 
-	//COMMTIMEOUTS timeouts = { 0 };
-	//timeouts.ReadIntervalTimeout = 1;
-	//timeouts.ReadTotalTimeoutConstant = 1;
-	//timeouts.ReadTotalTimeoutMultiplier = 1;
-	//timeouts.WriteTotalTimeoutConstant = 1;
-	//timeouts.WriteTotalTimeoutMultiplier = 1;
-
-	//if (!SetCommTimeouts(portHandle, &timeouts)) {
-	//	DebugBreak();
-	//}
-
 	SetCommMask(portHandle, EV_RXCHAR);
 
 	//start thread with checkIdleTimeout
