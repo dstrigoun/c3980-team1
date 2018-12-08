@@ -135,9 +135,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)portHandle, 0, &eventHandlerThreadId);
 
-	HANDLE hFile = CreateFile("test.txt", GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_APPEND_DATA, 0);
-	CloseHandle(hFile);
-
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);

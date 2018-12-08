@@ -101,21 +101,11 @@ void readDataFrame(const char* frame) {
 			data[i] = frame[2 + i];
 		}
 
-		HANDLE hFile = CreateFile("test.txt", GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_APPEND_DATA, 0);
-
-		if (hFile)
-		{
-			OutputDebugString("created hFile successfully\n");
+		std::ofstream file;
+		file.open("test.txt", std::fstream::app);
+		for (int i = 0; i < 9; i++) {
+			file << data[i];
 		}
-
-		LPDWORD written = 0;
-		WriteFile(hFile, data, 9, written, 0);
-
-		CloseHandle(hFile);
-
-		//strncpy_s(data, frame + 2, 9);
-
-		//return the data portion to be appended to file
 	}
 }
 
