@@ -31,8 +31,6 @@
 --
 --------------------------------------------------------------------------------------*/
 
-
-
 #include "Menu.h"
 #include "Main.h"
 #include "FileChooser.h"
@@ -201,10 +199,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			wp.portHandle = portHandle;
 			
 			generateFrame(ctrlFrame, NULL, SMILEY, &wp);
-			//generateCtrlFrame(ctrlFrame, SMILEY);
-			//wp.frame = ctrlFrame;
-			//wp.frameLen =3;
-			//sendFrame(&wp);
 			ENQ_FLAG = true;
 			MessageBox(hwnd, "send enq", "sent enq", MB_OK);
 			
