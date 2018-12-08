@@ -62,6 +62,9 @@
     <ClInclude Include="FileChooser.h">
       <Filter>Header Files\Application</Filter>
     </ClInclude>
+    <ClInclude Include="ReadThreadParams.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">

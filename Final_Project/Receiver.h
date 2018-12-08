@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include "FrameHandler.h"
+#include "ReadThreadParams.h"
 
 static HANDLE receiveTO;
-void readFromPort(HANDLE portHandle);
+void readFromPort(PREADTHREADPARAMS readTP);

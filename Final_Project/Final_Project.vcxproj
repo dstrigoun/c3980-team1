@@ -126,6 +126,7 @@
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="FileChooser.h" />
     <ClInclude Include="FrameHandler.h" />
+    <ClInclude Include="ReadThreadParams.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="Receiver.h" />
