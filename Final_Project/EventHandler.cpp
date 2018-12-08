@@ -30,20 +30,11 @@ DWORD WINAPI pollForEvents(LPVOID n)
 	DWORD waitResult;
 
 	while (1) {
-		//char readStr[1024];
 		waitResult = WaitForSingleObject(readTP->stopThreadEvent, 10);
 		switch (waitResult)
 		{
 		case WAIT_TIMEOUT:
 			readFromPort(readTP);
-			/*if (!ReadFile(readTP->hComm, readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
-				OutputDebugStringA("FAILED : read from serial");
-			}
-			else {
-				if (*(readTP->numBytesRead) > 0) {
-					receiveFrame(readStr, readTP->hwnd);
-				}
-			}*/
 			break;
 		case WAIT_OBJECT_0:
 			ExitThread(0);

@@ -206,11 +206,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;
 			
-			//char ctrlFrame[1024] = { 22, 4}; //for test; to be removed
-			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
-			//receiveFrame(ctrlFrame); //for test; to be removed
-			//sendCharacter(hwnd);
-			curState = "SEND";
 			break;
 		}
 		break;
@@ -304,7 +299,6 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 {
 	while (1) {
 		time_t currentTime = time(0);
-		int test = currentTime - LAST_EOT_RECEIVED;
 		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) 
 		{
 			terminateProgram();
