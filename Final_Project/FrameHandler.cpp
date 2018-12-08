@@ -6,10 +6,11 @@
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--						December 8th, 2018 - add debug statements to log file
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
 --	INTERFACE:		void receiveFrame(const char* frame)
 --						const char* frame - frame received
@@ -19,11 +20,10 @@
 --	NOTES:
 --	
 --------------------------------------------------------------------------------------*/
-void receiveFrame(const char* frame, HWND* hwnd) {
+void receiveFrame(const char* frame) {
 
 	// check type of frame
 	if (frame[0] == SYN) {
-		MessageBox(*hwnd, "SYN\n", "SYN\n", MB_OK);
 
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
@@ -36,8 +36,10 @@ void receiveFrame(const char* frame, HWND* hwnd) {
 	}
 	else {
 		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
-		MessageBox(*hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
-
+		std::ofstream file;
+		file.open("log.txt", std::fstream::app);
+		file << time(0) << ": \tFrame Corrupt, 1st Byte not SYN\n";
+		file.close();
 	}
 }
 
@@ -78,6 +80,8 @@ void sendFrame(char* frame, const char* data, char ctrl) {
 --	REVISIONS:		November 24, 2018
 --						November 27, 2018 - CRC code
 --						November 29, 2018 - use dummy CRC byte instead
+--						December 5th, 2018 - append data to local file
+--						December 8th, 2018 - add debug messages to log file
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
@@ -99,13 +103,13 @@ void readDataFrame(const char* frame) {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
 		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
 
-		//extract data from frame
-		char data[10] = {};
-		strncpy_s(data, frame + 2, 9);
-
 		//check for dummy CRC bit
-		if (frame[11] == 1) {
+		if (frame[1023] == 1) {
 			OutputDebugString("Dummy CRC bit works\n");
+			std::ofstream log_file;
+			log_file.open("log.txt", std::fstream::app);
+			log_file << time(0) << ":\tCRC bit is correct.\n";
+			log_file.close();
 		}
 
 		// CRC code that does not work
@@ -122,7 +126,12 @@ void readDataFrame(const char* frame) {
 		//OutputDebugString("CRC failed\n");
 		//-----------------------------------------------------
 
-		//return the data portion to be appended to file
+		OutputDebugString("in readDataFrame");
+
+		char data[1021] = {};
+		for (int i = 0; i < 1021; i++) {
+			data[i] = frame[2 + i];
+		}
 
 		// Check for EOF (-1) in the data
 		int data_size = sizeof(data) / sizeof(*data);
@@ -130,13 +139,23 @@ void readDataFrame(const char* frame) {
 		for (int i = 0; i < data_size; ++i) {
 			if (data[i] == -1) {
 				OutputDebugString("Found EOF in data\n");
+
+				std::ofstream log_file;
+				log_file.open("log.txt", std::fstream::app);
+				log_file << time(0) << ":\tReached EOF in data.\n";
+				log_file.close();
+
 				unfinishedTransmission = false;
+				data_size = i;
 			}
 		}
 
-		if (unfinishedTransmission) {
-			OutputDebugString("EOF not found\n");
+		std::ofstream file;
+		file.open("test.txt", std::fstream::app);
+		for (int i = 0; i < data_size; i++) {
+			file << data[i];
 		}
+		file.close();
 	}
 }
 
@@ -148,6 +167,7 @@ void readDataFrame(const char* frame) {
 --	REVISIONS:		November 24, 2018
 --					November 26, 2018 - receive EOT and ENQ and update state
 --					November 28, 2018 - receive ACK when ENQ was sent and update state
+--					December 8th, 2018 - write debug messages to log file
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
@@ -174,15 +194,30 @@ void readCtrlFrame(const char* frame) {
 			updateLastEOTReceived(time(0));
 			OutputDebugString(cur2);
 			OutputDebugString("\n");
+
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tReceived EOT\n";
+			file.close();
 		}
 		else if (ctrlChar == ENQ && !ENQ_FLAG) {
 			char ctrlFrame[1024];
 			sendFrame(ctrlFrame, nullptr, ACK);
 			curState = "RECEIVE";
+
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tReceived ENQ, go to RECEIVE\n";
+			file.close();
 		}
 		else if (ctrlChar == ACK && ENQ_FLAG) {
 			curState = "SEND";
 			unfinishedTransmission = true;
+
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tENQ was approved, go to SEND\n";
+			file.close();
 		}
 	}
 }
@@ -195,6 +230,7 @@ void readCtrlFrame(const char* frame) {
 --	REVISIONS:		November 24, 2018
 --						November 27, 2018 - CRC code
 --						November 29, 2018 - use dummy CRC byte instead
+--						December 8th, 2018 - generate data frame and switch DC1/DC2
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
@@ -212,13 +248,31 @@ void readCtrlFrame(const char* frame) {
 --	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
 void generateDataFrame(char* dataFrame, const char* data) {
-	dataFrame[0] = SYN;
-	dataFrame[1] = nextFrameToSend;
-	strcat_s(dataFrame, 12, data);
+	// use local data frame to append data
+	char localData[1024] = {};
+	*localData = *dataFrame;
+
+	localData[0] = SYN;
+	localData[1] = nextFrameToSend;
+
+	// copy data into local data frame
+	for (int i = 0; i < 1021; i++) {
+		localData[2 + i] = data[i];
+	}
+	
+	// copy local data frame into data frame
+	for (int i = 0; i < 1024; i++) {
+		dataFrame[i] = localData[i];
+	}
 
 	//append the dummy CRC bit
 	char dummyCRC = 1;
-	dataFrame[11] = dummyCRC;
+	dataFrame[1023] = dummyCRC;
+
+	std::ofstream log_file;
+	log_file.open("log.txt", std::fstream::app);
+	log_file << time(0) << ":\tGenerated CRC bit is: " << dummyCRC << "\n";
+	log_file.close();
 
 	// CRC code that does not work
 	//------------------------------------------------------
@@ -231,6 +285,9 @@ void generateDataFrame(char* dataFrame, const char* data) {
 
 	//strcat_s(dataFrame, 1021, msgbuf);
 	//-------------------------------------------------------
+
+
+	nextFrameToSend = (nextFrameToSend == DC1) ? DC2 : DC1;
 }
 
 /*-------------------------------------------------------------------------------------
