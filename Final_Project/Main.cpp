@@ -127,6 +127,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		== INVALID_HANDLE_VALUE)
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
+		std::ofstream file;
+		file.open("log.txt", std::fstream::app);
+		file << time(0) << ": \tError opening COM port.\n";
+		file.close();
 		//PostQuitMessage(0); // end program since opening port failed
 	}
 	cc.dwSize = sizeof(COMMCONFIG);

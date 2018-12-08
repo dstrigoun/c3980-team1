@@ -6,10 +6,11 @@
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--						December 8th, 2018 - add debug statements to log file
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
 --	INTERFACE:		void receiveFrame(const char* frame)
 --						const char* frame - frame received
