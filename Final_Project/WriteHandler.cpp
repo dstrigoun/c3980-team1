@@ -27,7 +27,7 @@ DWORD WINAPI sendFrame(LPVOID writeParams)
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 	
-	sendFrameToPort(wp->portHandle,wp->frame);
+	sendFrameToPort(wp->portHandle,wp->frame, wp->frameLen);
 
 	return 0;
 }
@@ -60,8 +60,8 @@ DWORD WINAPI sendEOTs(LPVOID writeParams)
 	wp = PWriteParams(writeParams);
 
 	do {
-		sendFrameToPort(wp->portHandle, wp->frame);
-		Sleep(10000);
+		sendFrameToPort(wp->portHandle, wp->frame, wp->frameLen);
+		Sleep(5000);
 	} while (curState == "IDLE");
 	
 	return 0;

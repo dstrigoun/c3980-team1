@@ -51,6 +51,8 @@ DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
 DWORD senderThreadId;
 
+DWORD numBytesRead;
+
 HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
 HANDLE senderThrd;
@@ -58,7 +60,7 @@ HANDLE senderThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
-LPCSTR lpszCommName = "com2";
+LPCSTR lpszCommName = "com1";
 char str[80] = "";
 
 ifstream currUploadFile;
@@ -121,7 +123,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	//open com port
 	if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
-		NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL))
+		NULL, OPEN_EXISTING, NULL, NULL))
 		== INVALID_HANDLE_VALUE)
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
@@ -145,11 +147,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	//start thread with checkIdleTimeout
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
-	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)portHandle, 0, &eventHandlerThreadId);
+	PREADTHREADPARAMS rtp = new ReadThreadParams(portHandle, stopThreadEvent, &numBytesRead, &hWnd);
+	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
 
-	char testEOTFrame[1024];
+	char testEOTFrame[3];
 	generateCtrlFrame(testEOTFrame, EOT);
-	PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame);
+	size_t frameLen = 3;
+	PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame, frameLen);
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
@@ -201,21 +205,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			char ctrlFrame[4] = {};
 			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;
-<<<<<<< HEAD
-
-			char dataFrame[12] = {}; //for test; to be removed
-			char data[9] = { 22, 2, 3, 4, 5, 6, 7, 8, -1 }; //for test; to be removed
-			generateDataFrame(dataFrame, data); //for test; to be removed
-			receiveFrame(dataFrame); //for test; to be removed
-
-=======
 			
 			//char ctrlFrame[1024] = { 22, 4}; //for test; to be removed
 			//generateCtrlFrame(ctrlFrame, 5); //for test; to be removed
 			//receiveFrame(ctrlFrame); //for test; to be removed
 			//sendCharacter(hwnd);
 			curState = "SEND";
->>>>>>> jason_send_eot
 			break;
 		}
 		break;

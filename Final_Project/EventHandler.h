@@ -9,3 +9,13 @@ static LPOVERLAPPED ov;
 
 DWORD WINAPI pollForEvents(LPVOID portHandle);
 void stopEventHandlerThrd();
+
+typedef struct ReadThreadParams {
+	HANDLE hComm;
+	HANDLE stopThreadEvent;
+	//HDC hdc;
+	HWND* hwnd;
+	LPDWORD numBytesRead;
+
+	ReadThreadParams(HANDLE hCom, HANDLE stopThreadEvent, LPDWORD numBytesRead, HWND* hwnd) : hComm(hCom), stopThreadEvent(stopThreadEvent), numBytesRead(numBytesRead), hwnd(hwnd) {}
+}READTHREADPARAMS, *PREADTHREADPARAMS;

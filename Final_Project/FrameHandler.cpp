@@ -17,12 +17,14 @@
 --	RETURNS:		void
 --
 --	NOTES:
---	Call this generic send method and send a frame based on parameters provided.
+--	
 --------------------------------------------------------------------------------------*/
-void receiveFrame(const char* frame) {
+void receiveFrame(const char* frame, HWND* hwnd) {
 
 	// check type of frame
 	if (frame[0] == SYN) {
+		MessageBox(*hwnd, "SYN\n", "SYN\n", MB_OK);
+
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
 			readDataFrame(frame);
@@ -34,6 +36,8 @@ void receiveFrame(const char* frame) {
 	}
 	else {
 		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
+		MessageBox(*hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
+
 	}
 }
 

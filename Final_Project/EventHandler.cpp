@@ -45,53 +45,83 @@ void stopEventHandlerThrd()
 --	characters received via the connected port.
 --	Any data received is passed to receiveFrame to be hanl.
 --------------------------------------------------------------------------------------*/
-DWORD WINAPI pollForEvents(LPVOID portHandle)
+DWORD WINAPI pollForEvents(LPVOID n)
 {
-	DWORD dwEvent;
-	BOOL fWaitingOnRead = FALSE;
-	DWORD dwRes;
-	char chRead[1024];
-	DWORD dwRead = NULL;
+	PREADTHREADPARAMS readTP;
+	readTP = PREADTHREADPARAMS(n);
+	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
+	SetCommTimeouts(readTP->hComm, &timeouts);
+	DWORD waitResult;
 
-	OVERLAPPED ovRead = { 0 };
-	ovRead.hEvent = CreateEvent(0, TRUE, FALSE, 0);
-	if (ovRead.hEvent == NULL) 
-	{
-		//error in creating event
-	}
-
-	while (isListening)
-	{
-		if (!WaitCommEvent(portHandle, &dwEvent, &ovRead))
+	while (1) {
+		char readStr[1024];
+		waitResult = WaitForSingleObject(readTP->stopThreadEvent, 10);
+		switch (waitResult)
 		{
-			dwRes = WaitForSingleObject(ovRead.hEvent, INFINITE);
-			switch (dwRes)
-			{
-			case WAIT_OBJECT_0:
-				if (!GetOverlappedResult(portHandle, &ovRead, &dwRead, FALSE))
-				{
-					// Error in communications;
-				}
-				else
-				{
-					if (!ReadFile(portHandle, chRead, 1024, &dwRead, &ovRead))
-					{
-						receiveFrame(chRead);
-					}
-				}
-				break;
-
-			case WAIT_TIMEOUT:
-				// This is a good time to do some background work.
-				break;
-
-			default:
-				// Error in the WaitForSingleObject; abort.
-				// This indicates a problem with the OVERLAPPED structure's
-				// event handle.
-				break;
+		case WAIT_TIMEOUT:
+			if (!ReadFile(readTP->hComm, readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
+				OutputDebugStringA("FAILED : read from serial");
 			}
+			else {
+				//char printChar[] = { tempChar, '\0' };
+				//TextOut(readTP->hdc, 0, 0, (LPCWSTR)printChar, strlen(printChar));
+				if (*(readTP->numBytesRead) > 0) {
+					receiveFrame(readStr, readTP->hwnd);
+				}
+			}
+			break;
+		case WAIT_OBJECT_0:
+			ExitThread(0);
+			break;
+		default:
+			break;
 		}
 	}
+	//DWORD dwEvent;
+	//BOOL fWaitingOnRead = FALSE;
+	//DWORD dwRes;
+	//char chRead[1024];
+	//DWORD dwRead = NULL;
+
+	//OVERLAPPED ovRead = { 0 };
+	//ovRead.hEvent = CreateEvent(0, TRUE, FALSE, 0);
+	//if (ovRead.hEvent == NULL) 
+	//{
+	//	//error in creating event
+	//}
+
+	//while (isListening)
+	//{
+	//	if (!WaitCommEvent(portHandle, &dwEvent, &ovRead))
+	//	{
+	//		dwRes = WaitForSingleObject(ovRead.hEvent, INFINITE);
+	//		switch (dwRes)
+	//		{
+	//		case WAIT_OBJECT_0:
+	//			if (!GetOverlappedResult(portHandle, &ovRead, &dwRead, FALSE))
+	//			{
+	//				// Error in communications;
+	//			}
+	//			else
+	//			{
+	//				if (!ReadFile(portHandle, chRead, 1024, &dwRead, &ovRead))
+	//				{
+	//				receiveFrame(chRead);
+	//				}
+	//			}
+	//			break;
+
+	//		case WAIT_TIMEOUT:
+	//			// This is a good time to do some background work.
+	//			break;
+
+	//		default:
+	//			// Error in the WaitForSingleObject; abort.
+	//			// This indicates a problem with the OVERLAPPED structure's
+	//			// event handle.
+	//			break;
+	//		}
+	//	}
+	//}
 	return 0;
 }

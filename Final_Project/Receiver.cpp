@@ -48,7 +48,7 @@ void readFromPort(HANDLE portHandle)
 			{
 				if (!ReadFile(portHandle, chRead, 1024, &dwRead, &ovRead))
 				{
-					receiveFrame(chRead);
+					//receiveFrame(chRead); COMMENTED OUT BY KIERAN 07/12/2018 cause he was messing with receive frame
 				}
 			}
 			break;
