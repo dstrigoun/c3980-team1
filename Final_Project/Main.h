@@ -45,3 +45,5 @@ void sendCharacter(HWND hwnd);
 
 void updateLastEOTReceived(time_t receivedTime);
 
+void updateCurState(string newState);
+
