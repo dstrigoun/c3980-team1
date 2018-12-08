@@ -49,9 +49,14 @@ using namespace std;
 //time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
+DWORD senderThreadId;
+
+DWORD numBytesRead;
 
 HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
+HANDLE senderThrd;
+
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
@@ -116,12 +121,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
 
-	//set LAST_EOT_RECEIVED to current time
-	//LAST_EOT_RECEIVED = time(0);
-
 	//open com port
 	if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
-		NULL, OPEN_EXISTING, 0, NULL))
+		NULL, OPEN_EXISTING, NULL, NULL))
 		== INVALID_HANDLE_VALUE)
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
@@ -129,11 +131,20 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	}
 	cc.dwSize = sizeof(COMMCONFIG);
 	cc.wVersion = 0x100;
+
 	SetCommMask(portHandle, EV_RXCHAR);
 
 	//start thread with checkIdleTimeout
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
-	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)portHandle, 0, &eventHandlerThreadId);
+	PREADTHREADPARAMS rtp = new ReadThreadParams(portHandle, stopThreadEvent, &numBytesRead, &hWnd);
+	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
+
+	char testEOTFrame[3];
+	generateCtrlFrame(testEOTFrame, EOT);
+	size_t frameLen = 3;
+	PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame, frameLen);
+	
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
 
 	while (GetMessage(&Msg, NULL, 0, 0))
@@ -183,12 +194,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			char ctrlFrame[4] = {};
 			sendFrame(ctrlFrame, NULL, ENQ);
 			ENQ_FLAG = true;
-
-			char dataFrame[12] = {}; //for test; to be removed
-			char data[9] = { 22, 2, 3, 4, 5, 6, 7, 8, -1 }; //for test; to be removed
-			generateDataFrame(dataFrame, data); //for test; to be removed
-			receiveFrame(dataFrame); //for test; to be removed
-
+			
 			break;
 		}
 		break;
@@ -196,6 +202,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 	case WM_DESTROY:	// Terminate program
 		SetEvent(stopThreadEvent);
 		CloseHandle(hIdleTimeoutThrd);
+		CloseHandle(eventHandlerThrd);
+		CloseHandle(senderThrd);
 		PostQuitMessage(0);
 		break;
 
@@ -280,14 +288,12 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 {
 	while (1) {
 		time_t currentTime = time(0);
-
-		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) {
+		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) 
+		{
 			terminateProgram();
 		}
-
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
 	}
-
 	return 0;
 }
 
@@ -315,6 +321,8 @@ void terminateProgram()
 
 	SetEvent(stopThreadEvent);
 	CloseHandle(hIdleTimeoutThrd);
+	CloseHandle(eventHandlerThrd);
+	CloseHandle(senderThrd);
 	PostQuitMessage(0);
 	exit(1);
 }
@@ -338,10 +346,12 @@ void terminateProgram()
 --	Called to send a character to the port
 --------------------------------------------------------------------------------------*/
 void sendCharacter(HWND hwnd) {
-	HDC hdc = GetDC(hwnd); // get device context
+	//HDC hdc = GetDC(hwnd); // get device context
 	sprintf_s(str, "%c", LPCWSTR('a'));
 	WriteFile(portHandle, str, 1, 0, NULL);
-	ReleaseDC(hwnd, hdc); // Release device context
+	//ReleaseDC(hwnd, hdc); // Release device context
 }
 
-
+void updateLastEOTReceived(time_t receivedTime) {
+	LAST_EOT_RECEIVED = receivedTime;
+}
