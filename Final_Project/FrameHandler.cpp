@@ -1,4 +1,5 @@
 #include "FrameHandler.h"
+#include "ReadThreadParams.h"
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
@@ -19,11 +20,11 @@
 --	NOTES:
 --	
 --------------------------------------------------------------------------------------*/
-void receiveFrame(const char* frame, HWND* hwnd) {
+void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 	// check type of frame
 	if (frame[0] == SYN) {
-		MessageBox(*hwnd, "SYN\n", "SYN\n", MB_OK);
+		MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
 
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
@@ -31,12 +32,12 @@ void receiveFrame(const char* frame, HWND* hwnd) {
 		}
 		else {
 			//ctrl frame
-			readCtrlFrame(frame);
+			readCtrlFrame(frame, rtp);
 		}
 	}
 	else {
 		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
-		MessageBox(*hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
+		MessageBox(*rtp->hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
 
 	}
 }
@@ -63,10 +64,15 @@ void receiveFrame(const char* frame, HWND* hwnd) {
 --	NOTES:
 --	Call this generic send method and send a frame based on parameters provided.
 --------------------------------------------------------------------------------------*/
-void sendFrame(char* frame, const char* data, char ctrl) {
+void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
 	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
 		: generateDataFrame(frame, data);
-
+	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
+	//copy in frame info to wp char azrr
+	for (int i = 0; i < wp->frameLen; i++) {
+		wp->frame[i] = frame[i];
+	}
+	sendFrame(wp);
 	//start sender thread here with the above created frame
 }
 
@@ -161,7 +167,7 @@ void readDataFrame(const char* frame) {
 --	NOTES:
 --	Call this to read a control frame and handle behaviour based on each control char
 --------------------------------------------------------------------------------------*/
-void readCtrlFrame(const char* frame) {
+void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char ctrlChar = frame[1];
 	char dcChar = frame[2];
 
@@ -176,13 +182,17 @@ void readCtrlFrame(const char* frame) {
 			OutputDebugString("\n");
 		}
 		else if (ctrlChar == ENQ && !ENQ_FLAG) {
-			char ctrlFrame[1024];
-			sendFrame(ctrlFrame, nullptr, ACK);
+			char ctrlFrame[3];
+			WriteParams wp(rtp->hComm, ctrlFrame, 3);
+			generateFrame(ctrlFrame, nullptr, ACK, &wp);
 			curState = "RECEIVE";
+			MessageBox(*rtp->hwnd, "Recieve State", "Receive State", MB_OK);
 		}
 		else if (ctrlChar == ACK && ENQ_FLAG) {
 			curState = "SEND";
 			unfinishedTransmission = true;
+			MessageBox(*rtp->hwnd, "Send State", "Send State", MB_OK);
+
 		}
 	}
 }

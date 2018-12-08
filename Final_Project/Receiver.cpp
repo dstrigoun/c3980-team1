@@ -27,7 +27,7 @@ void readFromPort(PREADTHREADPARAMS readTP) {
 	}
 	else {
 		if (*(readTP->numBytesRead) > 0) {
-			receiveFrame(readStr, readTP->hwnd);
+			receiveFrame(readStr, readTP);
 		}
 	}
 }

@@ -65,6 +65,9 @@
     <ClInclude Include="ReadThreadParams.h">
       <Filter>Header Files\DataLink</Filter>
     </ClInclude>
+    <ClInclude Include="WriteParams.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">

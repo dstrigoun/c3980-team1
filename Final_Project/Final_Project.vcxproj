@@ -132,6 +132,7 @@
     <ClInclude Include="Receiver.h" />
     <ClInclude Include="Sender.h" />
     <ClInclude Include="WriteHandler.h" />
+    <ClInclude Include="WriteParams.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Menu.rc" />

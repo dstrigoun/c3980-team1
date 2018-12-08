@@ -24,7 +24,6 @@ void sendFrameToPort(HANDLE portHandle, char* frame, size_t frameLen) {
 	
 	DWORD numBytesWritten;
 	if (!WriteFile(portHandle, frame, frameLen, &numBytesWritten, NULL)) {
-		exit(1);
 	}
 	
 }

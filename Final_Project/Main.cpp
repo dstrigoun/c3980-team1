@@ -36,6 +36,8 @@
 #include "Menu.h"
 #include "Main.h"
 #include "FileChooser.h"
+#include "Sender.h"
+#include "FrameHandler.h"
 
 #define STRICT_TYPED_ITEMIDS
 #include <fstream>
@@ -44,6 +46,7 @@
 #include <string>
 #include <atlbase.h>
 #include <AtlConv.h>
+#include <queue>
 using namespace std;
 
 //time_t LAST_EOT_RECEIVED;
@@ -62,6 +65,8 @@ HANDLE portHandle;
 COMMCONFIG	cc;
 LPCSTR lpszCommName = "com1";
 char str[80] = "";
+char CurrentSendingCharArrKieran[1024];
+WriteParams wp(NULL, NULL, NULL);
 
 ifstream currUploadFile;
 
@@ -191,9 +196,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				MessageBox(hwnd, temp, "title", MB_OK);
 			}
 
-			char ctrlFrame[4] = {};
-			sendFrame(ctrlFrame, NULL, ENQ);
+			char ctrlFrame[3] = {};
+			wp.frame = CurrentSendingCharArrKieran;
+			wp.portHandle = portHandle;
+			
+			generateFrame(ctrlFrame, NULL, SMILEY, &wp);
+			//generateCtrlFrame(ctrlFrame, SMILEY);
+			//wp.frame = ctrlFrame;
+			//wp.frameLen =3;
+			//sendFrame(&wp);
 			ENQ_FLAG = true;
+			MessageBox(hwnd, "send enq", "sent enq", MB_OK);
 			
 			break;
 		}
