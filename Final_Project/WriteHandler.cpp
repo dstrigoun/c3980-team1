@@ -21,13 +21,14 @@
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI sendFrame(LPVOID writeParams)
 {
+	VariableManager &vm = VariableManager::getInstance();
 	DWORD dwWrite = NULL;
 	DWORD dwBytesWritten = 0;
 
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 	
-	sendFrameToPort(wp->portHandle,wp->frame, wp->frameLen);
+	sendFrameToPort(wp->frame, wp->frameLen);
 
 	return 0;
 }
@@ -61,7 +62,7 @@ DWORD WINAPI sendEOTs(LPVOID writeParams)
 	wp = PWriteParams(writeParams);
 
 	do {
-		sendFrameToPort(wp->portHandle, wp->frame, wp->frameLen);
+		sendFrameToPort(wp->frame, wp->frameLen);
 
 		std::ofstream file;
 		file.open("log.txt", std::fstream::app);

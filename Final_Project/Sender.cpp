@@ -20,10 +20,10 @@
 --	NOTES:
 --	Pass this thread function to Sender thread to send out a frame
 --------------------------------------------------------------------------------------*/
-void sendFrameToPort(HANDLE portHandle, char* frame, size_t frameLen) {
-	
+void sendFrameToPort(char* frame, size_t frameLen) {
+	VariableManager &vm = VariableManager::getInstance();
 	DWORD numBytesWritten;
-	if (!WriteFile(portHandle, frame, frameLen, &numBytesWritten, NULL)) {
+	if (!WriteFile(vm.get_portHandle(), frame, frameLen, &numBytesWritten, NULL)) {
 		std::ofstream file;
 		file.open("log.txt", std::fstream::app);
 		file << time(0) << ": \tWrite File failed.\n";

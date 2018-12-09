@@ -1,5 +1,6 @@
 #include "FrameHandler.h"
 #include "ReadThreadParams.h"
+#include "fileChooser.h"
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
@@ -70,35 +71,28 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --	NOTES:
 --	Call this generic send method and send a frame based on parameters provided.
 --------------------------------------------------------------------------------------*/
-void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
-	char localFrame[3] = {};
-	std::ofstream file;
-	file.open("log.txt", std::fstream::app);
-	file << time(0) << ": \tIn Generate Frame before pixking type of frame\n";
-	file.close();
-	(ctrl != NULL) ? generateCtrlFrame(localFrame, ctrl)
-		: generateDataFrame(frame, data);
-	file.open("log.txt", std::fstream::app);
-	file << time(0) << ": \tIn Generate Frame before setting frame length \n";
-	file.close();
+void generateFrame(const char* data, char ctrl, PWriteParams wp) {
+	char localCtlFrame[3] = {};
+	char localDataFrame[1024] = {};
+	(ctrl != NULL) ? generateCtrlFrame(localCtlFrame, ctrl)
+		: generateDataFrame(localDataFrame, data);
+	
 	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
-	//copy in frame info to wp char azrr
-	file.open("log.txt", std::fstream::app);
-	file << time(0) << ": \tIn Generate Frame before copying frame into WP \n";
-	file.close();
-	for (int i = 0; i < wp->frameLen; i++) {
-		file.open("log.txt", std::fstream::app);
-		file << time(0) << ": \tIn loop " << i << std::endl ;
-		file.close();
-		wp->frame[i] = localFrame[i];
+	
+	if (ctrl != NULL) {
+		for (int i = 0; i < wp->frameLen; i++) {
+			wp->frame[i] = localCtlFrame[i];
+		}
 	}
-	file.open("log.txt", std::fstream::app);
-	file << time(0) << ": \tIn Generate Frame before send frame to port \n";
-	file.close();
+	else {
+		for (int i = 0; i < wp->frameLen; i++) {
+			wp->frame[i] = localDataFrame[i];
+		}
+	}
+	
+	
 	sendFrame(wp);
-	file.open("log.txt", std::fstream::app);
-	file << time(0) << ": \tIn Generate Frame after send frame to port \n";
-	file.close();
+	
 	//start sender thread here with the above created frame
 }
 
@@ -126,7 +120,9 @@ void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
 --	Call this to read a data frame and handle the data retrieved from the frame
 --------------------------------------------------------------------------------------*/
 void readDataFrame(const char* frame) {
-	if (frame[1] != nextFrameToReceive) {
+	std::ofstream log_file;
+
+	if (false /*frame[1] != nextFrameToReceive*/) { //tempeoaraliy made this always fail
 		//duplicate frame 
 	}
 	else {
@@ -164,28 +160,34 @@ void readDataFrame(const char* frame) {
 		}
 
 		// Check for EOF (-1) in the data
-		int data_size = sizeof(data) / sizeof(*data);
+		//int data_size = sizeof(data) / sizeof(*data);
+		int data_size = 1021;
 
 		for (int i = 0; i < data_size; ++i) {
+			log_file.open("log.txt", std::fstream::app);
+			log_file << data[i];
+			log_file.close();
+
 			if (data[i] == -1) {
 				OutputDebugString("Found EOF in data\n");
 
 				std::ofstream log_file;
 				log_file.open("log.txt", std::fstream::app);
-				log_file << time(0) << ":\tReached EOF in data.\n";
+				log_file << time(0) << ":\n\tReached EOF in data.\n";
 				log_file.close();
 
 				unfinishedTransmission = false;
 				data_size = i;
+				break;
 			}
 		}
 
-		std::ofstream file;
+		/*std::ofstream file;
 		file.open("test.txt", std::fstream::app);
 		for (int i = 0; i < data_size; i++) {
 			file << data[i];
 		}
-		file.close();
+		file.close();*/
 	}
 }
 
@@ -218,7 +220,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char dcChar = frame[2];
 	char CurrentSendingCharArrKieran[1024] = {};
 	wp->frame = CurrentSendingCharArrKieran;
-	wp->portHandle = vm.get_portHandle();
 
 
 	std::ofstream afile;
@@ -244,12 +245,11 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
 			
-			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			std::ofstream file;
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tReceived ENQ & SENDING ACK, BEFORE GENERATE FRAME\n";
 			file.close();
-			generateFrame(ctrlFrame, nullptr, ACK, wp);
+			generateFrame(nullptr, ACK, wp);
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tReceived ENQ & SENDING ACK, AFTERGENERATE FRAME\n";
 			file.close();
@@ -269,6 +269,43 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tENQ was approved, go to SEND\n";
 			file.close();
+
+			//send the first data frame
+			
+			char* payload = getPayload();
+
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tGot payload\n";
+			file.close();
+
+			generateFrame(payload, NULL, wp);
+		}
+	}
+	else if (vm.get_curState() == "SEND") {
+		if (ctrlChar == ACK) {
+			char* payload = getPayload();
+			generateFrame(payload, NULL, wp);
+		}
+	}
+	else if (vm.get_curState() == "RECEIVE") {
+		if (ctrlChar == DC1 || ctrlChar == DC2) {
+			bool lastDataFrame = false;
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \t Data content: ";
+			for (int i = 2; i < 1022; i++) {
+				if (frame[i] == EOF) {
+					lastDataFrame = true;
+					break;
+				}
+				file << frame[i];
+				
+			}
+			file << std::endl;
+			file.close();
+
+			generateFrame(nullptr, ACK, wp);
+
 		}
 	}
 }

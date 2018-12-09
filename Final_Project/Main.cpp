@@ -61,7 +61,6 @@ LPCSTR lpszCommName = "com1";
 char str[80] = "";
 char CurrentSendingCharArrKieran[1024];
 
-ifstream currUploadFile;
 PREADTHREADPARAMS rtp;
 
 
@@ -157,7 +156,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	char testEOTFrame[3];
 	generateCtrlFrame(testEOTFrame, EOT);
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(testEOTFrame, frameLen);
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
@@ -204,20 +203,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			file << time(0) << ": \tClicked upload\n";
 			file.close();
 
-			currUploadFile = openFile(&hwnd);
-			LPCSTR temp;
-			
-			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
-				MessageBox(hwnd, temp, "title", MB_OK);
-			}
+			ifstream* kieransTempButNotReallyTempUploadFile = new ifstream;
+			*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
+			vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
 
-			char ctrlFrame[3] = {};
 			wp->frame = CurrentSendingCharArrKieran;
-			wp->portHandle = vm.get_portHandle();
 			
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tSENDING ENQ, BEFORE GENERATE FRAME\n";
-			generateFrame(ctrlFrame, NULL, ENQ, wp);
+			generateFrame(NULL, ENQ, wp);
 			file << time(0) << ": \tSENDING ENQ, AFTERGENERATE FRAME\n";
 		
 
