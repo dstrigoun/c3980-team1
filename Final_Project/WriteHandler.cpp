@@ -50,11 +50,21 @@ void sendDataFrame(LPVOID writeParams)
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 
-	sendFrameToPort(wp->portHandle, (char*) getPayload(PcurrUploadFile)[0],wp->frameLen);
-	vm.increment_numFramesSent();
+	if (vm.get_numFramesSent() < MAX_FRAMES_SENT) {
+		lastFrameSent = (char*)getPayload(PcurrUploadFile)[0];
+		sendFrameToPort(wp->portHandle, (char*)lastFrameSent, wp->frameLen);
+		vm.increment_numFramesSent();
 
-	debugMessage("DataFrame Sent Successfully");
-	debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
+		debugMessage("DataFrame Sent Successfully");
+		//debugMessage(lastFrameSent);
+		debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
+	}
+	else {
+		// end transmission
+		// send eot
+		goToIdle();
+	}
+	
 }
 
 void resendDataFrame(LPVOID writeParams)
@@ -62,12 +72,18 @@ void resendDataFrame(LPVOID writeParams)
 	VariableManager &vm = VariableManager::getInstance();
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
+	if (vm.get_numFramesReSent() < MAX_RESENDS) {
+		sendFrameToPort(wp->portHandle, (char*)lastFrameSent, 1024);
+		vm.increment_numFramesReSent();
 
-	sendFrameToPort(&Pport, (char*) lastFrameSent, 1024);
-	vm.increment_numFramesReSent();
-
-	debugMessage("Received NAK for DataFrame");
-	debugMessage("Number of resends: " + to_string(vm.get_numFramesReSent()));
+		debugMessage("Received NAK for DataFrame");
+		debugMessage("Number of resends: " + to_string(vm.get_numFramesReSent()));
+	}
+	else {
+		// end transmission
+		// send eot
+		goToIdle();
+	}
 
 }
 

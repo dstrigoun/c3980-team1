@@ -58,7 +58,7 @@ HANDLE senderThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 COMMCONFIG	cc;
-LPCSTR lpszCommName = "com1";
+LPCSTR lpszCommName = "com3";
 char str[80] = "";
 char CurrentSendingCharArrKieran[1024];
 
@@ -208,11 +208,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				MessageBox(hwnd, temp, "title", MB_OK);
 			}*/
 
+			char dataFrame[1024] = {};
+			generateFrame(dataFrame, getPayload(&currUploadFile)[0], NULL, 1024);
+
 			char ctrlFrame[3] = {};
 			wp->frame = CurrentSendingCharArrKieran;
 			wp->portHandle = vm.get_portHandle();
 			
 			generateFrame(ctrlFrame, NULL, ENQ, wp);
+
+			sendFrameToPort(wp->portHandle, wp->frame, 1024);
 
 			char ackFrameTest[3] = {};
 			generateCtrlFrame(ackFrameTest, ACK);

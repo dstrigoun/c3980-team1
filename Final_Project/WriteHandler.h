@@ -11,7 +11,9 @@ using namespace std;
 
 static ifstream* PcurrUploadFile;
 static LPCSTR lastFrameSent;
-static HANDLE* Pport;
+
+static int MAX_RESENDS = 5;
+static int MAX_FRAMES_SENT = 50;
 
 
 void initWriteHandler(ifstream* file);
