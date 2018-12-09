@@ -265,8 +265,15 @@ void goToIdle()
 	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
+	debugMessage("IDLE timeout created, starting to send EOTs");
+
 	char testEOTFrame[3] = {};
 	generateCtrlFrame(testEOTFrame, EOT);
+		
+	std::stringstream message;
+	message << "EOT Frame to start thread: " << (LPSTR)testEOTFrame << std::endl;
+	debugMessage(message.str());
+
 	size_t frameLen = 3;
 	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
 

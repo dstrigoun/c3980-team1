@@ -24,13 +24,10 @@ HANDLE hTimeoutThrd;
 --	NOTES:
 --	
 --------------------------------------------------------------------------------------*/
-void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
-
+void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) 
+{
 	// check type of frame
 	if (frame[0] == SYN) {
-		//MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
-
-
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
 			readDataFrame(frame);
