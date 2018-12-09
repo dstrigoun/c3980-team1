@@ -21,8 +21,9 @@
 --	and handle the frame received.
 --------------------------------------------------------------------------------------*/
 void readFromPort(PREADTHREADPARAMS readTP) {
+	VariableManager &vm = VariableManager::getInstance();
 	char readStr[1024];
-	if (!ReadFile(readTP->hComm, readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
+	if (!ReadFile(vm.get_portHandle(), readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
 		OutputDebugStringA("FAILED : read from serial");
 	}
 	else {

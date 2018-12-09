@@ -212,22 +212,23 @@ void readDataFrame(const char* frame) {
 --	Call this to read a control frame and handle behaviour based on each control char
 --------------------------------------------------------------------------------------*/
 void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
+	VariableManager& vm = VariableManager::getInstance();
+
 	char ctrlChar = frame[1];
 	char dcChar = frame[2];
 	char CurrentSendingCharArrKieran[1024] = {};
 	wp->frame = CurrentSendingCharArrKieran;
-	wp->portHandle = rtp->hComm;
+	wp->portHandle = vm.get_portHandle();
 
-	VariableManager& vm = VariableManager::getInstance();
 
 	std::ofstream afile;
 	afile.open("log.txt", std::fstream::app);
-	afile << time(0) << ": \tCurrent state: " << curState << "\n";
+	afile << time(0) << ": \tCurrent state: " << vm.get_curState() << "\n";
 	afile << time(0) << ": \tENQ_FLAG: " << vm.get_ENQ_FLAG() << "\n";
 	afile.close();
 
 	// handle behaviour based on control char received
-	if (curState == "IDLE") {
+	if (vm.get_curState() == "IDLE") {
 		if (ctrlChar == EOT) {
 			LAST_EOT_RECEIVED = time(0);
 			char cur2[16] = "";
@@ -252,14 +253,14 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tReceived ENQ & SENDING ACK, AFTERGENERATE FRAME\n";
 			file.close();
-			curState = "RECEIVE";
+			vm.set_curState("RECEIVE");
 
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tReceived ENQ, go to RECEIVE\n";
 			file.close();
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
-			curState = "SEND";
+			vm.set_curState("SEND");
 			unfinishedTransmission = true;
 			//MessageBox(*rtp->hwnd, "Send State", "Send State", MB_OK);
 

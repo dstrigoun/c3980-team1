@@ -56,7 +56,6 @@ HANDLE eventHandlerThrd;
 HANDLE senderThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
-HANDLE portHandle;
 COMMCONFIG	cc;
 LPCSTR lpszCommName = "com1";
 char str[80] = "";
@@ -113,17 +112,23 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	if (!RegisterClassEx(&Wcl))
 		return 0;
 
+	VariableManager& vm = VariableManager::getInstance();
+	vm.set_curState("IDLE");
+
 	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		600, 400, NULL, NULL, hInst, NULL);
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
+
+	vm.set_hwnd(hWnd);
 
 	srand((unsigned int)time(0));
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
 
 	//open com port
-	if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
+	HANDLE tempPortHandle;
+	if ((tempPortHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
 		NULL, OPEN_EXISTING, NULL, NULL))
 		== INVALID_HANDLE_VALUE)
 	{
@@ -134,6 +139,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		file.close();
 		//PostQuitMessage(0); // end program since opening port failed
 	}
+	vm.set_portHandle(tempPortHandle);
 
 	//wp.portHandle = portHandle;
 	//wp.frame = CurrentSendingCharArrKieran;
@@ -141,17 +147,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	cc.dwSize = sizeof(COMMCONFIG);
 	cc.wVersion = 0x100;
 
-	SetCommMask(portHandle, EV_RXCHAR);
+	SetCommMask(vm.get_portHandle(), EV_RXCHAR);
 
 	//start thread with checkIdleTimeout
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
-	PREADTHREADPARAMS rtp = new ReadThreadParams(portHandle, stopThreadEvent, &numBytesRead, &hWnd);
+	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
 
 	char testEOTFrame[3];
 	generateCtrlFrame(testEOTFrame, EOT);
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
@@ -186,6 +192,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 	WPARAM wParam, LPARAM lParam)
 {
+	VariableManager& vm = VariableManager::getInstance();
 	switch (Message)
 	{
 	case WM_COMMAND:
@@ -206,7 +213,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 			char ctrlFrame[3] = {};
 			wp->frame = CurrentSendingCharArrKieran;
-			wp->portHandle = portHandle;
+			wp->portHandle = vm.get_portHandle();
 			
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tSENDING ENQ, BEFORE GENERATE FRAME\n";
@@ -215,7 +222,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		
 
 			file << time(0) << ": \tRight before setting ENQ_FLAG to true.\n";
-			VariableManager& vm = VariableManager::getInstance();
 			vm.set_ENQ_FLAG(true);
 			file << time(0) << ": \tRight after setting ENQ_FLAG to true." << vm.get_ENQ_FLAG() << "\n";
 			
@@ -371,9 +377,10 @@ void terminateProgram()
 --	Called to send a character to the port
 --------------------------------------------------------------------------------------*/
 void sendCharacter(HWND hwnd) {
+	VariableManager& vm = VariableManager::getInstance();
 	//HDC hdc = GetDC(hwnd); // get device context
 	sprintf_s(str, "%c", LPCWSTR('a'));
-	WriteFile(portHandle, str, 1, 0, NULL);
+	WriteFile(vm.get_portHandle(), str, 1, 0, NULL);
 	//ReleaseDC(hwnd, hdc); // Release device context
 }
 
