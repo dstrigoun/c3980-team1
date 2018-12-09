@@ -24,6 +24,10 @@ void sendFrameToPort(HANDLE portHandle, char* frame, size_t frameLen) {
 	
 	DWORD numBytesWritten;
 	if (!WriteFile(portHandle, frame, frameLen, &numBytesWritten, NULL)) {
+		std::ofstream file;
+		file.open("log.txt", std::fstream::app);
+		file << time(0) << ": \tWrite File failed.\n";
+		file.close();
 	}
 	
 }

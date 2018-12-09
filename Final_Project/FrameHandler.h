@@ -1,5 +1,6 @@
 #pragma once
 #include <windows.h>
+#include <fstream>
 #include <stdio.h>
 #include <string.h>
 #include <boost/crc.hpp>
@@ -22,6 +23,7 @@ static bool isClearToSend = true;
 
 void receiveFrame(const char* frame, PREADTHREADPARAMS rtp);
 void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp);
+
 
 void readDataFrame(const char* frame);
 void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp);

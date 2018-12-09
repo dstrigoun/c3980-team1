@@ -67,6 +67,8 @@ char CurrentSendingCharArrKieran[1024];
 WriteParams wp(NULL, NULL, NULL);
 
 ifstream currUploadFile;
+PREADTHREADPARAMS rtp;
+
 
 #pragma warning (disable: 4096)
 
@@ -130,6 +132,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		== INVALID_HANDLE_VALUE)
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
+		std::ofstream file;
+		file.open("log.txt", std::fstream::app);
+		file << time(0) << ": \tError opening COM port.\n";
+		file.close();
 		//PostQuitMessage(0); // end program since opening port failed
 	}
 	cc.dwSize = sizeof(COMMCONFIG);
@@ -148,7 +154,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame, frameLen);
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
-
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -187,6 +192,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tClicked upload\n";
+			file.close();
+
 			currUploadFile = openFile(&hwnd);
 			LPCSTR temp;
 			
@@ -202,6 +212,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			ENQ_FLAG = true;
 			MessageBox(hwnd, "send enq", "sent enq", MB_OK);
 			
+
+
+			char dataFrame3[1024] = {}; //for test; to be removed
+			char reallyDifferent2[1021] = { 'w', 'o', 'w', -1 }; //for test; to be removed
+			generateDataFrame(dataFrame3, reallyDifferent2); //for test; to be removed
+			receiveFrame(dataFrame3, rtp); //for test; to be removed
+
 			break;
 		}
 		break;
