@@ -146,6 +146,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	SetCommMask(vm.get_portHandle(), EV_RXCHAR);
 
 	//start thread with checkIdleTimeout
+	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
@@ -256,13 +257,15 @@ void goToIdle()
 	}
 	vm.set_curState("IDLE");
 
+	debugMessage("Current State: " + vm.get_curState());
 
 	// check to see if there's data
 	// start all idle threads
 
+	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
-	char testEOTFrame[3];
+	char testEOTFrame[3] = {};
 	generateCtrlFrame(testEOTFrame, EOT);
 	size_t frameLen = 3;
 	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
@@ -373,10 +376,14 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 	VariableManager& vm = VariableManager::getInstance();
 	while (vm.get_curState() == "IDLE") {
 		time_t currentTime = time(0);
-		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) 
+		if (currentTime - vm.get_LAST_EOT() > IDLE_TIMEOUT_TIME_S) 
 		{
 			terminateProgram();
 		}
+		int difference = currentTime - vm.get_LAST_EOT();
+		std::stringstream message;
+		message << "Last EOT was " << difference << " seconds ago";
+		debugMessage(message.str());
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
 	}
 	return 0;
@@ -436,12 +443,4 @@ void sendCharacter(HWND hwnd) {
 	sprintf_s(str, "%c", LPCWSTR('a'));
 	WriteFile(vm.get_portHandle(), str, 1, 0, NULL);
 	//ReleaseDC(hwnd, hdc); // Release device context
-}
-
-void updateLastEOTReceived(time_t receivedTime) {
-	LAST_EOT_RECEIVED = receivedTime;
-}
-
-void updateLastDataFrameReceived(time_t receivedTime) {
-	LAST_DATA_FRAME_RECEIVED = receivedTime;
 }

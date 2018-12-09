@@ -38,6 +38,12 @@ public:
 
 	void set_curState(std::string curState) { this->curState = curState; }
 	std::string get_curState() { return this->curState; }
+
+	void set_LAST_EOT(time_t current) { this->LAST_EOT_RECEIVED = current; }
+	DWORD get_LAST_EOT() { return this->LAST_EOT_RECEIVED; }
+
+	void set_LAST_DATA(time_t current) { this->LAST_DATA_FRAME_RECEIVED = current; }
+	DWORD get_LAST_DATA() { return this->LAST_DATA_FRAME_RECEIVED; }
 private:
 	VariableManager() {}
 
@@ -45,5 +51,6 @@ private:
 	HWND hwnd;
 	HANDLE portHandle;
 	std::string curState;
-
+	DWORD LAST_EOT_RECEIVED;
+	DWORD LAST_DATA_FRAME_RECEIVED;
 };

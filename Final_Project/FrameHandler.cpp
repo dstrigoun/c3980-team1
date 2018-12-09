@@ -188,12 +188,13 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	wp->portHandle = vm.get_portHandle();
 
 	debugMessage("Current State: " + vm.get_curState());
-	debugMessage("ENQ_FLAG: " + (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE");
+	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
+	debugMessage("ENQ_FLAG: " + tempENQ);
 
 	// handle behaviour based on control char received
 	if (vm.get_curState() == "IDLE") {
 		if (ctrlChar == EOT) {
-			updateLastEOTReceived(time(0));
+			vm.set_LAST_EOT(time(0));
 			debugMessage("Received EOT");
 		}
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
@@ -206,14 +207,21 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			debugMessage("curState is now RECEIVE");
 
 			// start receive timeout thread
-			updateLastDataFrameReceived(time(0));
-			hTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &timeoutThreadId);
+			vm.set_LAST_DATA(time(0));
+			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
 			unfinishedTransmission = true;
 
 			debugMessage("ENQ was approved, go to SEND state");
+		}
+	}
+	else if (vm.get_curState() == "SEND")
+	{
+		if (ctrlChar == EOT)
+		{
+			goToIdle();
 		}
 	}
 	else if (vm.get_curState() == "RECEIVE")
@@ -410,10 +418,14 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 	VariableManager& vm = VariableManager::getInstance();
 	while (vm.get_curState() == "RECEIVE") {
 		time_t currentTime = time(0);
-		if (currentTime - LAST_DATA_FRAME_RECEIVED > RECEIVE_TIMEOUT_TIME_S)
+		if (currentTime - vm.get_LAST_DATA() > RECEIVE_TIMEOUT_TIME_S)
 		{
 			goToIdle();
 		}
+		int difference = currentTime - vm.get_LAST_DATA();
+		std::stringstream message;
+		message << "Last data frame was " << difference << " seconds ago";
+		debugMessage(message.str());
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
 	}
 	return 0;
