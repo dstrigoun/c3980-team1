@@ -38,7 +38,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 	}
 	else {
-		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
 		debugMessage("Frame Corrupt, 1st Byte not SYN");
 	}
 }
@@ -128,8 +127,6 @@ void readDataFrame(const char* frame) {
 		//OutputDebugString("CRC failed\n");
 		//-----------------------------------------------------
 
-		OutputDebugString("in readDataFrame");
-
 		char data[1021] = {};
 		for (int i = 0; i < 1021; i++) {
 			data[i] = frame[2 + i];
@@ -140,7 +137,6 @@ void readDataFrame(const char* frame) {
 
 		for (int i = 0; i < data_size; ++i) {
 			if (data[i] == -1) {
-				OutputDebugString("Found EOF in data\n");
 				debugMessage("Reached EOF in data");
 
 				unfinishedTransmission = false;
@@ -195,11 +191,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	if (vm.get_curState() == "IDLE") {
 		if (ctrlChar == EOT) {
 			LAST_EOT_RECEIVED = time(0);
-			char cur2[16] = "";
-			sprintf_s(cur2, "%d", LAST_EOT_RECEIVED);
-			updateLastEOTReceived(time(0));
-			OutputDebugString(cur2);
-			OutputDebugString("\n");
 
 			debugMessage("Received EOT");
 		}
@@ -207,7 +198,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			debugMessage("Received ENQ & sending ACK");
 
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
-
 			generateFrame(ctrlFrame, nullptr, ACK, wp);
 
 			vm.set_curState("RECEIVE");

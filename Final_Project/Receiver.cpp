@@ -24,7 +24,7 @@ void readFromPort(PREADTHREADPARAMS readTP) {
 	VariableManager &vm = VariableManager::getInstance();
 	char readStr[1024];
 	if (!ReadFile(vm.get_portHandle(), readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
-		OutputDebugStringA("FAILED : read from serial");
+		debugMessage("Read file failed");
 	}
 	else {
 		if (*(readTP->numBytesRead) > 0) {
