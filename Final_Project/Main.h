@@ -30,6 +30,8 @@ int randomNumberGenerator(int min, int max);
 
 void goToIdle();
 
+void debugMessage(std::string message);
+
 void triggerRandomWait();
 
 DWORD WINAPI checkIdleTimeout(LPVOID n);

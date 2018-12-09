@@ -133,10 +133,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		== INVALID_HANDLE_VALUE)
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
-		std::ofstream file;
-		file.open("log.txt", std::fstream::app);
-		file << time(0) << ": \tError opening COM port.\n";
-		file.close();
+		debugMessage("Error opening COM port");
 		//PostQuitMessage(0); // end program since opening port failed
 	}
 	vm.set_portHandle(tempPortHandle);
@@ -199,10 +196,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		switch (LOWORD(wParam))
 		{
 		case IDM_UPLOAD:
-			std::ofstream file;
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tClicked upload\n";
-			file.close();
+			debugMessage("Clicked upload");
 
 			currUploadFile = openFile(&hwnd);
 			LPCSTR temp;
@@ -215,17 +209,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			wp->frame = CurrentSendingCharArrKieran;
 			wp->portHandle = vm.get_portHandle();
 			
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tSENDING ENQ, BEFORE GENERATE FRAME\n";
-			generateFrame(ctrlFrame, NULL, ENQ, wp);
-			file << time(0) << ": \tSENDING ENQ, AFTERGENERATE FRAME\n";
-		
+			generateFrame(ctrlFrame, NULL, ENQ, wp);		
 
-			file << time(0) << ": \tRight before setting ENQ_FLAG to true.\n";
 			vm.set_ENQ_FLAG(true);
-			file << time(0) << ": \tRight after setting ENQ_FLAG to true." << vm.get_ENQ_FLAG() << "\n";
-			
-			file.close();
 			break;
 		}
 		break;
@@ -268,7 +254,44 @@ void goToIdle()
 
 	// check to see if there's data
 	// start all idle threads
+	VariableManager& vm = VariableManager::getInstance();
 
+
+	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+
+	char testEOTFrame[3];
+	generateCtrlFrame(testEOTFrame, EOT);
+	size_t frameLen = 3;
+	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
+
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	debugMessage
+--
+--	DATE:			December 8th, 2018
+--
+--	REVISIONS:		December 8th, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		void debugMessage(std::string message)
+--						std::string message: message to append to log file
+--
+--	RETURNS:		void
+--
+--	NOTES:
+--	Call this to log a message to log.txt that gets created in the program directory.
+--------------------------------------------------------------------------------------*/
+void debugMessage(std::string message)
+{
+	std::ofstream file;
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \t" + message + "\n";
+	file.close();
 }
 
 /*-------------------------------------------------------------------------------------

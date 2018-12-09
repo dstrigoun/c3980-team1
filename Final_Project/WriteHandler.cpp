@@ -63,10 +63,7 @@ DWORD WINAPI sendEOTs(LPVOID writeParams)
 	do {
 		sendFrameToPort(wp->portHandle, wp->frame, wp->frameLen);
 
-		std::ofstream file;
-		file.open("log.txt", std::fstream::app);
-		file << time(0) << ": \tSent EOT\n";
-		file.close();
+		debugMessage("Send EOT");
 
 		Sleep(5000);
 	} while (vm.get_curState() == "IDLE");
