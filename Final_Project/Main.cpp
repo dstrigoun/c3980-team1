@@ -260,8 +260,6 @@ void goToIdle()
 
 	// check to see if there's data
 	// start all idle threads
-	VariableManager& vm = VariableManager::getInstance();
-
 
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
@@ -373,7 +371,8 @@ int randomNumberGenerator(int min, int max)
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI checkIdleTimeout(LPVOID n)
 {
-	while (1) {
+	VariableManager& vm = VariableManager::getInstance();
+	while (vm.get_curState() == "IDLE") {
 		time_t currentTime = time(0);
 		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) 
 		{
