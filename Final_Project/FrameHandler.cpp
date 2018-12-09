@@ -1,6 +1,9 @@
 #include "FrameHandler.h"
 #include "ReadThreadParams.h"
 
+DWORD timeoutThreadId;
+HANDLE hTimeoutThrd;
+
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
 --
@@ -200,8 +203,11 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			generateFrame(ctrlFrame, nullptr, ACK, wp);
 
 			vm.set_curState("RECEIVE");
-
 			debugMessage("curState is now RECEIVE");
+
+			// start receive timeout thread
+			updateLastDataFrameReceived(time(0));
+			hTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
@@ -377,3 +383,38 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 //
 //	return result.checksum() == receivedCRC;
 //}
+
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	receiveTimeout
+--
+--	DATE:			December 8, 2018
+--
+--	REVISIONS:		December 8, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		DWORD WINAPI receiveTimeout(LPVOID n)
+--						LPVOID n: void pointer to thread param
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check the difference between
+--  the current time and the time when the last data frame was received
+--------------------------------------------------------------------------------------*/
+DWORD WINAPI receiveTimeout(LPVOID n)
+{
+	VariableManager& vm = VariableManager::getInstance();
+	while (vm.get_curState() == "RECEIVE") {
+		time_t currentTime = time(0);
+		if (currentTime - LAST_DATA_FRAME_RECEIVED > RECEIVE_TIMEOUT_TIME_S)
+		{
+			goToIdle();
+		}
+		Sleep(CHECK_IDLE_TIMEOUT_MS);
+	}
+	return 0;
+}

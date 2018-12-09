@@ -44,7 +44,6 @@
 #include <queue>
 using namespace std;
 
-//time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
 DWORD senderThreadId;
@@ -251,7 +250,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 void goToIdle()
 {
 	VariableManager& vm = VariableManager::getInstance();
-	if (vm.get_curState == "SEND")
+	if (vm.get_curState() == "SEND")
 	{
 		triggerRandomWait();
 	}
@@ -441,4 +440,8 @@ void sendCharacter(HWND hwnd) {
 
 void updateLastEOTReceived(time_t receivedTime) {
 	LAST_EOT_RECEIVED = receivedTime;
+}
+
+void updateLastDataFrameReceived(time_t receivedTime) {
+	LAST_DATA_FRAME_RECEIVED = receivedTime;
 }
