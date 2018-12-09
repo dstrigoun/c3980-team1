@@ -1,7 +1,8 @@
 #pragma once
 #include <Windows.h>
 #include "FrameHandler.h"
+#include "ReadThreadParams.h"
 
 static HANDLE receiveTO;
-void ReadFromPort(LPVOID portHandle);
 DWORD WINAPI checkReceiveTimeout(LPVOID n);
+void readFromPort(PREADTHREADPARAMS readTP);

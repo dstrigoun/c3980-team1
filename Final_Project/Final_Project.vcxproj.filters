@@ -56,7 +56,19 @@
     <ClInclude Include="EventHandler.h">
       <Filter>Header Files\DataLink</Filter>
     </ClInclude>
+    <ClInclude Include="WriteHandler.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
     <ClInclude Include="FileChooser.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="ReadThreadParams.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="WriteParams.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="VariableManager.h">
       <Filter>Header Files\Application</Filter>
     </ClInclude>
   </ItemGroup>
@@ -76,7 +88,13 @@
     <ClCompile Include="EventHandler.cpp">
       <Filter>Source Files\DataLink</Filter>
     </ClCompile>
+    <ClCompile Include="WriteHandler.cpp">
+      <Filter>Source Files\DataLink</Filter>
+    </ClCompile>
     <ClCompile Include="FileChooser.cpp">
+      <Filter>Source Files\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="VariableManager.cpp">
       <Filter>Source Files\Application</Filter>
     </ClCompile>
   </ItemGroup>
