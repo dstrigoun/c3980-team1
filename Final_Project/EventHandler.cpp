@@ -54,23 +54,26 @@ DWORD WINAPI pollForEvents(LPVOID portHandle)
 	isListening = true;
 	SetCommMask(portHandle, EV_RXCHAR | EV_CTS);
 
-	hReceiveTimeoutThrd = CreateThread(NULL, 0, checkReceiveTimeout, 0, 0, &receiveTOThreadId);
 	lastFrameReceived = time(0);
 
-	while (isListening)
-	{
-		if (WaitCommEvent(portHandle, &dwEvent, NULL))
+	if (isListening) {
+		// Start receiveTO thread since the program is listening
+		hReceiveTimeoutThrd = CreateThread(NULL, 0, checkReceiveTimeout, 0, 0, &receiveTOThreadId);
+		while (isListening)
 		{
-			if (dwEvent & EV_RXCHAR)
+			if (WaitCommEvent(portHandle, &dwEvent, NULL))
 			{
-				ReadFromPort(portHandle);
-				lastFrameReceived = time(0);
+				if (dwEvent & EV_RXCHAR)
+				{
+					ReadFromPort(portHandle);
+					lastFrameReceived = time(0);
+				}
 			}
-		}
-		else
-		{
-			MessageBox(NULL, "Error Reading from port", "", MB_OK);
-			break;
+			else
+			{
+				MessageBox(NULL, "Error Reading from port", "", MB_OK);
+				break;
+			}
 		}
 	}
 	CloseHandle(hReceiveTimeoutThrd);

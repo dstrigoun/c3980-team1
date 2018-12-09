@@ -55,7 +55,7 @@ HANDLE eventHandlerThrd;
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE portHandle;
 COMMCONFIG	cc;
-LPCSTR lpszCommName = "com1";
+LPCSTR lpszCommName = "com2";
 char str[80] = "";
 
 ifstream currUploadFile;
@@ -175,7 +175,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		case IDM_UPLOAD:
 			currUploadFile = openFile(&hwnd);
 			LPCSTR temp;
-			
+
 			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
 				MessageBox(hwnd, temp, "title", MB_OK);
 			}
