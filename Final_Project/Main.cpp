@@ -207,15 +207,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			/*while ((temp = getPayload(&currUploadFile))[0] != EOF) {
 				MessageBox(hwnd, temp, "title", MB_OK);
 			}*/
-
+			temp = getPayload(&currUploadFile);
 			char dataFrame[1024] = {};
-			generateFrame(dataFrame, getPayload(&currUploadFile)[0], NULL, 1024);
+			
 
 			char ctrlFrame[3] = {};
-			wp->frame = CurrentSendingCharArrKieran;
+			wp->frame = dataFrame;
 			wp->portHandle = vm.get_portHandle();
 			
 			generateFrame(ctrlFrame, NULL, ENQ, wp);
+
+			generateFrame(dataFrame, temp, NULL, wp);
 
 			sendFrameToPort(wp->portHandle, wp->frame, 1024);
 

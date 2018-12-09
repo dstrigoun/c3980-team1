@@ -51,7 +51,7 @@ void sendDataFrame(LPVOID writeParams)
 	wp = PWriteParams(writeParams);
 
 	if (vm.get_numFramesSent() < MAX_FRAMES_SENT) {
-		lastFrameSent = (char*)getPayload(PcurrUploadFile)[0];
+		lastFrameSent = getPayload(PcurrUploadFile);
 		sendFrameToPort(wp->portHandle, (char*)lastFrameSent, wp->frameLen);
 		vm.increment_numFramesSent();
 
