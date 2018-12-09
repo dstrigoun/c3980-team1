@@ -27,7 +27,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	if (frame[0] == SYN) {
 		//MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
 
-
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
 			readDataFrame(frame);
@@ -188,11 +187,14 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	debugMessage("ENQ_FLAG: " + (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE");
 
 	// handle behaviour based on control char received
+
 	if (vm.get_curState() == "IDLE") {
+
 		if (ctrlChar == EOT) {
 			updateLastEOTReceived(time(0));
 			debugMessage("Received EOT");
 		}
+
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
 			debugMessage("Received ENQ & sending ACK");
 
@@ -216,6 +218,26 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		{
 			goToIdle();
 		}
+	}
+	else if (vm.get_curState() == "SEND")
+	{
+		switch (ctrlChar)
+		{
+		case ACK:
+			//update DC1/DC2
+			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
+			//trigger send frame
+			sendDataFrame();
+			break;
+		case NAK:
+			//trigger resend frame
+			resendDataFrame();
+			break;
+		}
+	}
+	else if (vm.get_curState() == "RECEIVE")
+	{
+
 	}
 }
 

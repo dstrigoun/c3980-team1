@@ -7,6 +7,7 @@
 #include "Main.h"
 #include "WriteParams.h"
 #include "ReadThreadParams.h"
+#include "WriteHandler.h"
 
 static const char SYN = 22;
 static const char DC1 = 17;

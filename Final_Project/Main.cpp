@@ -42,6 +42,7 @@
 #include <atlbase.h>
 #include <AtlConv.h>
 #include <queue>
+
 using namespace std;
 
 //time_t LAST_EOT_RECEIVED;
@@ -442,4 +443,8 @@ void sendCharacter(HWND hwnd) {
 
 void updateLastEOTReceived(time_t receivedTime) {
 	LAST_EOT_RECEIVED = receivedTime;
+}
+
+void updateCurState(string newState) {
+	curState = newState;
 }
