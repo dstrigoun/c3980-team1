@@ -53,6 +53,7 @@ DWORD WINAPI sendFrame(LPVOID writeParams)
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI sendEOTs(LPVOID writeParams)
 {
+	VariableManager &vm = VariableManager::getInstance();
 	DWORD dwWrite = NULL;
 	DWORD dwBytesWritten = 0;
 
@@ -68,7 +69,7 @@ DWORD WINAPI sendEOTs(LPVOID writeParams)
 		file.close();
 
 		Sleep(5000);
-	} while (curState == "IDLE");
+	} while (vm.get_curState() == "IDLE");
 	
 	return 0;
 }
