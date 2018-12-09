@@ -1,4 +1,5 @@
 #include "FrameHandler.h"
+#include "ReadThreadParams.h"
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
@@ -20,10 +21,12 @@
 --	NOTES:
 --	
 --------------------------------------------------------------------------------------*/
-void receiveFrame(const char* frame) {
+void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 	// check type of frame
 	if (frame[0] == SYN) {
+		//MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
+
 
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
@@ -31,11 +34,13 @@ void receiveFrame(const char* frame) {
 		}
 		else {
 			//ctrl frame
-			readCtrlFrame(frame);
+			readCtrlFrame(frame, rtp);
 		}
 	}
 	else {
 		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
+		//MessageBox(*rtp->hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
+
 		std::ofstream file;
 		file.open("log.txt", std::fstream::app);
 		file << time(0) << ": \tFrame Corrupt, 1st Byte not SYN\n";
@@ -65,10 +70,35 @@ void receiveFrame(const char* frame) {
 --	NOTES:
 --	Call this generic send method and send a frame based on parameters provided.
 --------------------------------------------------------------------------------------*/
-void sendFrame(char* frame, const char* data, char ctrl) {
-	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
+void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
+	char localFrame[3] = {};
+	std::ofstream file;
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before pixking type of frame\n";
+	file.close();
+	(ctrl != NULL) ? generateCtrlFrame(localFrame, ctrl)
 		: generateDataFrame(frame, data);
-
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before setting frame length \n";
+	file.close();
+	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
+	//copy in frame info to wp char azrr
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before copying frame into WP \n";
+	file.close();
+	for (int i = 0; i < wp->frameLen; i++) {
+		file.open("log.txt", std::fstream::app);
+		file << time(0) << ": \tIn loop " << i << std::endl ;
+		file.close();
+		wp->frame[i] = localFrame[i];
+	}
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before send frame to port \n";
+	file.close();
+	sendFrame(wp);
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame after send frame to port \n";
+	file.close();
 	//start sender thread here with the above created frame
 }
 
@@ -181,12 +211,24 @@ void readDataFrame(const char* frame) {
 --	NOTES:
 --	Call this to read a control frame and handle behaviour based on each control char
 --------------------------------------------------------------------------------------*/
-void readCtrlFrame(const char* frame) {
+void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
+	VariableManager& vm = VariableManager::getInstance();
+
 	char ctrlChar = frame[1];
 	char dcChar = frame[2];
+	char CurrentSendingCharArrKieran[1024] = {};
+	wp->frame = CurrentSendingCharArrKieran;
+	wp->portHandle = vm.get_portHandle();
+
+
+	std::ofstream afile;
+	afile.open("log.txt", std::fstream::app);
+	afile << time(0) << ": \tCurrent state: " << vm.get_curState() << "\n";
+	afile << time(0) << ": \tENQ_FLAG: " << vm.get_ENQ_FLAG() << "\n";
+	afile.close();
 
 	// handle behaviour based on control char received
-	if (curState == "IDLE") {
+	if (vm.get_curState() == "IDLE") {
 		if (ctrlChar == EOT) {
 			LAST_EOT_RECEIVED = time(0);
 			char cur2[16] = "";
@@ -200,19 +242,28 @@ void readCtrlFrame(const char* frame) {
 			file << time(0) << ": \tReceived EOT\n";
 			file.close();
 		}
-		else if (ctrlChar == ENQ && !ENQ_FLAG) {
-			char ctrlFrame[1024];
-			sendFrame(ctrlFrame, nullptr, ACK);
-			curState = "RECEIVE";
-
+		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
+			
+			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tReceived ENQ & SENDING ACK, BEFORE GENERATE FRAME\n";
+			file.close();
+			generateFrame(ctrlFrame, nullptr, ACK, wp);
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tReceived ENQ & SENDING ACK, AFTERGENERATE FRAME\n";
+			file.close();
+			vm.set_curState("RECEIVE");
+
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tReceived ENQ, go to RECEIVE\n";
 			file.close();
 		}
-		else if (ctrlChar == ACK && ENQ_FLAG) {
-			curState = "SEND";
+		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
+			vm.set_curState("SEND");
 			unfinishedTransmission = true;
+			//MessageBox(*rtp->hwnd, "Send State", "Send State", MB_OK);
+
 
 			std::ofstream file;
 			file.open("log.txt", std::fstream::app);
@@ -346,13 +397,13 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 --	NOTES:
 --  Call this to build CRC for set of data
 --------------------------------------------------------------------------------------*/
-boost::uint16_t buildCRC(const char* data) {
-	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
-
-	result.process_bytes(data, 1021);
-
-	return result.checksum();
-}
+//boost::uint16_t buildCRC(const char* data) {
+//	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
+//
+//	result.process_bytes(data, 1021);
+//
+//	return result.checksum();
+//}
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	checkCRC
@@ -374,20 +425,20 @@ boost::uint16_t buildCRC(const char* data) {
 --	NOTES:
 --  Call this to check the CRC in the last byte of the data frame
 --------------------------------------------------------------------------------------*/
-bool checkCRC(const char* data, boost::uint16_t receivedCRC) {
-	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
-
-	result.process_bytes(data, 1021);
-
-	char expected[64] = {};
-	sprintf_s(expected, "expected CRC: %u", (unsigned)receivedCRC);
-	OutputDebugString(expected);
-	OutputDebugString("\n");
-
-	char msgbuf[1024];
-	sprintf_s(msgbuf, "calculated CRC: %u", (unsigned)result.checksum());
-	OutputDebugString(msgbuf);
-	OutputDebugString("\n");
-
-	return result.checksum() == receivedCRC;
-}
+//bool checkCRC(const char* data, boost::uint16_t receivedCRC) {
+//	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
+//
+//	result.process_bytes(data, 1021);
+//
+//	char expected[64] = {};
+//	sprintf_s(expected, "expected CRC: %u", (unsigned)receivedCRC);
+//	OutputDebugString(expected);
+//	OutputDebugString("\n");
+//
+//	char msgbuf[1024];
+//	sprintf_s(msgbuf, "calculated CRC: %u", (unsigned)result.checksum());
+//	OutputDebugString(msgbuf);
+//	OutputDebugString("\n");
+//
+//	return result.checksum() == receivedCRC;
+//}

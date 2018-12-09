@@ -131,7 +131,9 @@
     <ClInclude Include="Menu.h" />
     <ClInclude Include="Receiver.h" />
     <ClInclude Include="Sender.h" />
+    <ClInclude Include="VariableManager.h" />
     <ClInclude Include="WriteHandler.h" />
+    <ClInclude Include="WriteParams.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Menu.rc" />
@@ -143,6 +145,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Receiver.cpp" />
     <ClCompile Include="Sender.cpp" />
+    <ClCompile Include="VariableManager.cpp" />
     <ClCompile Include="WriteHandler.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
