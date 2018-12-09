@@ -214,6 +214,17 @@ void readDataFrame(const char* frame) {
 void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char ctrlChar = frame[1];
 	char dcChar = frame[2];
+	char CurrentSendingCharArrKieran[1024] = {};
+	wp->frame = CurrentSendingCharArrKieran;
+	wp->portHandle = rtp->hComm;
+
+	VariableManager& vm = VariableManager::getInstance();
+
+	std::ofstream afile;
+	afile.open("log.txt", std::fstream::app);
+	afile << time(0) << ": \tCurrent state: " << curState << "\n";
+	afile << time(0) << ": \tENQ_FLAG: " << vm.get_ENQ_FLAG() << "\n";
+	afile.close();
 
 	// handle behaviour based on control char received
 	if (curState == "IDLE") {
@@ -230,26 +241,24 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			file << time(0) << ": \tReceived EOT\n";
 			file.close();
 		}
-		else if (ctrlChar == ENQ && !ENQ_FLAG) {
+		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
 			
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
-			//WriteParams wp(rtp->hComm, ctrlFrame, 3);
 			std::ofstream file;
 			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tReceived ENQ, BEFORE GENERATE FRAME\n";
+			file << time(0) << ": \tReceived ENQ & SENDING ACK, BEFORE GENERATE FRAME\n";
 			file.close();
-			generateFrame(ctrlFrame, nullptr, ACK, &wp);
+			generateFrame(ctrlFrame, nullptr, ACK, wp);
 			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tReceived ENQ, AFTERGENERATE FRAME\n";
+			file << time(0) << ": \tReceived ENQ & SENDING ACK, AFTERGENERATE FRAME\n";
 			file.close();
 			curState = "RECEIVE";
-			//MessageBox(*rtp->hwnd, "Recieve State", "Receive State", MB_OK);
 
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tReceived ENQ, go to RECEIVE\n";
 			file.close();
 		}
-		else if (ctrlChar == ACK && ENQ_FLAG) {
+		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			curState = "SEND";
 			unfinishedTransmission = true;
 			//MessageBox(*rtp->hwnd, "Send State", "Send State", MB_OK);
@@ -379,13 +388,13 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 --	NOTES:
 --  Call this to build CRC for set of data
 --------------------------------------------------------------------------------------*/
-boost::uint16_t buildCRC(const char* data) {
-	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
-
-	result.process_bytes(data, 1021);
-
-	return result.checksum();
-}
+//boost::uint16_t buildCRC(const char* data) {
+//	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
+//
+//	result.process_bytes(data, 1021);
+//
+//	return result.checksum();
+//}
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	checkCRC
@@ -407,20 +416,20 @@ boost::uint16_t buildCRC(const char* data) {
 --	NOTES:
 --  Call this to check the CRC in the last byte of the data frame
 --------------------------------------------------------------------------------------*/
-bool checkCRC(const char* data, boost::uint16_t receivedCRC) {
-	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
-
-	result.process_bytes(data, 1021);
-
-	char expected[64] = {};
-	sprintf_s(expected, "expected CRC: %u", (unsigned)receivedCRC);
-	OutputDebugString(expected);
-	OutputDebugString("\n");
-
-	char msgbuf[1024];
-	sprintf_s(msgbuf, "calculated CRC: %u", (unsigned)result.checksum());
-	OutputDebugString(msgbuf);
-	OutputDebugString("\n");
-
-	return result.checksum() == receivedCRC;
-}
+//bool checkCRC(const char* data, boost::uint16_t receivedCRC) {
+//	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
+//
+//	result.process_bytes(data, 1021);
+//
+//	char expected[64] = {};
+//	sprintf_s(expected, "expected CRC: %u", (unsigned)receivedCRC);
+//	OutputDebugString(expected);
+//	OutputDebugString("\n");
+//
+//	char msgbuf[1024];
+//	sprintf_s(msgbuf, "calculated CRC: %u", (unsigned)result.checksum());
+//	OutputDebugString(msgbuf);
+//	OutputDebugString("\n");
+//
+//	return result.checksum() == receivedCRC;
+//}

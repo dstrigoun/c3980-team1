@@ -3,7 +3,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
-#include <boost/crc.hpp>
+//#include <boost/crc.hpp>
 #include "Main.h"
 #include "WriteParams.h"
 #include "ReadThreadParams.h"
@@ -31,5 +31,5 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp);
 void generateDataFrame(char* dataFrame, const char* data);
 void generateCtrlFrame(char* ctrlFrame, char ctrl);
 
-boost::uint16_t buildCRC(const char* data);
-bool checkCRC(const char* data, boost::uint16_t receivedCRC);
+//boost::uint16_t buildCRC(const char* data);
+//bool checkCRC(const char* data, boost::uint16_t receivedCRC);

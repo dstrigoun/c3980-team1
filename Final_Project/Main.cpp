@@ -33,9 +33,6 @@
 
 #include "Menu.h"
 #include "Main.h"
-#include "FileChooser.h"
-#include "Sender.h"
-#include "FrameHandler.h"
 
 #define STRICT_TYPED_ITEMIDS
 #include <fstream>
@@ -94,158 +91,77 @@ PREADTHREADPARAMS rtp;
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow)
 {
-	try {
-		MSG Msg;
-		WNDCLASSEX Wcl;
-		HWND hWnd;
+	MSG Msg;
+	WNDCLASSEX Wcl;
+	HWND hWnd;
 
-		Wcl.cbSize = sizeof(WNDCLASSEX);
-		Wcl.style = CS_HREDRAW | CS_VREDRAW;
-		Wcl.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-		Wcl.hIconSm = NULL;
-		Wcl.hCursor = LoadCursor(NULL, IDC_ARROW);
+	Wcl.cbSize = sizeof(WNDCLASSEX);
+	Wcl.style = CS_HREDRAW | CS_VREDRAW;
+	Wcl.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	Wcl.hIconSm = NULL;
+	Wcl.hCursor = LoadCursor(NULL, IDC_ARROW);
 
-		Wcl.lpfnWndProc = WndProc;
-		Wcl.hInstance = hInst;
-		Wcl.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-		Wcl.lpszClassName = Name;
+	Wcl.lpfnWndProc = WndProc;
+	Wcl.hInstance = hInst;
+	Wcl.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+	Wcl.lpszClassName = Name;
 
-		Wcl.lpszMenuName = "MYMENU";
-		Wcl.cbClsExtra = 0;
-		Wcl.cbWndExtra = 0;
+	Wcl.lpszMenuName = "MYMENU";
+	Wcl.cbClsExtra = 0;
+	Wcl.cbWndExtra = 0;
 
-		if (!RegisterClassEx(&Wcl))
-			return 0;
+	if (!RegisterClassEx(&Wcl))
+		return 0;
 
-		hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
-			600, 400, NULL, NULL, hInst, NULL);
-		ShowWindow(hWnd, nCmdShow);
-		UpdateWindow(hWnd);
+	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
+		600, 400, NULL, NULL, hInst, NULL);
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 
-		srand((unsigned int)time(0));
-		//initial random wait to put programs off sync to reduce collision
-		triggerRandomWait();
+	srand((unsigned int)time(0));
+	//initial random wait to put programs off sync to reduce collision
+	triggerRandomWait();
 
-		//open com port
-		if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
-			NULL, OPEN_EXISTING, NULL, NULL))
-			== INVALID_HANDLE_VALUE)
-		{
-			MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
-			std::ofstream file;
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tError opening COM port.\n";
-			file.close();
-			//PostQuitMessage(0); // end program since opening port failed
-		}
-
-		wp.portHandle = portHandle;
-		wp.frame = CurrentSendingCharArrKieran;
-		wp.frameLen = 1024;
-		cc.dwSize = sizeof(COMMCONFIG);
-		cc.wVersion = 0x100;
-
-		SetCommMask(portHandle, EV_RXCHAR);
-
-		//start thread with checkIdleTimeout
-		hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
-		PREADTHREADPARAMS rtp = new ReadThreadParams(portHandle, stopThreadEvent, &numBytesRead, &hWnd);
-		eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
-
-		char testEOTFrame[3];
-		generateCtrlFrame(testEOTFrame, EOT);
-		size_t frameLen = 3;
-		PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame, frameLen);
-
-		senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
-
-		while (GetMessage(&Msg, NULL, 0, 0))
-		{
-			TranslateMessage(&Msg);
-			DispatchMessage(&Msg);
-		}
-		return (int)Msg.wParam;
-
-	}
-	catch (const std::exception &exc) {
+	//open com port
+	if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
+		NULL, OPEN_EXISTING, NULL, NULL))
+		== INVALID_HANDLE_VALUE)
+	{
+		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
 		std::ofstream file;
 		file.open("log.txt", std::fstream::app);
-		file << time(0) << ": \t" << exc.what() << "\n";
+		file << time(0) << ": \tError opening COM port.\n";
 		file.close();
-		return 999999999;
-
+		//PostQuitMessage(0); // end program since opening port failed
 	}
-	//MSG Msg;
-	//WNDCLASSEX Wcl;
-	//HWND hWnd;
-
-	//Wcl.cbSize = sizeof(WNDCLASSEX);
-	//Wcl.style = CS_HREDRAW | CS_VREDRAW;
-	//Wcl.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	//Wcl.hIconSm = NULL;
-	//Wcl.hCursor = LoadCursor(NULL, IDC_ARROW);
-
-	//Wcl.lpfnWndProc = WndProc;
-	//Wcl.hInstance = hInst;
-	//Wcl.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	//Wcl.lpszClassName = Name;
-
-	//Wcl.lpszMenuName = "MYMENU";
-	//Wcl.cbClsExtra = 0;
-	//Wcl.cbWndExtra = 0;
-
-	//if (!RegisterClassEx(&Wcl))
-	//	return 0;
-
-	//hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
-	//	600, 400, NULL, NULL, hInst, NULL);
-	//ShowWindow(hWnd, nCmdShow);
-	//UpdateWindow(hWnd);
-
-	//srand((unsigned int)time(0));
-	////initial random wait to put programs off sync to reduce collision
-	//triggerRandomWait();
-
-	////open com port
-	//if ((portHandle = CreateFile(lpszCommName, GENERIC_READ | GENERIC_WRITE, 0,
-	//	NULL, OPEN_EXISTING, NULL, NULL))
-	//	== INVALID_HANDLE_VALUE)
-	//{
-	//	MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
-	//	std::ofstream file;
-	//	file.open("log.txt", std::fstream::app);
-	//	file << time(0) << ": \tError opening COM port.\n";
-	//	file.close();
-	//	//PostQuitMessage(0); // end program since opening port failed
-	//}
 
 	//wp.portHandle = portHandle;
 	//wp.frame = CurrentSendingCharArrKieran;
 	//wp.frameLen = 1024;
-	//cc.dwSize = sizeof(COMMCONFIG);
-	//cc.wVersion = 0x100;
+	cc.dwSize = sizeof(COMMCONFIG);
+	cc.wVersion = 0x100;
 
-	//SetCommMask(portHandle, EV_RXCHAR);
+	SetCommMask(portHandle, EV_RXCHAR);
 
-	////start thread with checkIdleTimeout
-	//hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
-	//PREADTHREADPARAMS rtp = new ReadThreadParams(portHandle, stopThreadEvent, &numBytesRead, &hWnd);
-	//eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
+	//start thread with checkIdleTimeout
+	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+	PREADTHREADPARAMS rtp = new ReadThreadParams(portHandle, stopThreadEvent, &numBytesRead, &hWnd);
+	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
 
-	//char testEOTFrame[3];
-	//generateCtrlFrame(testEOTFrame, EOT);
-	//size_t frameLen = 3;
-	//PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame, frameLen);
-	//
-	//senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
+	char testEOTFrame[3];
+	generateCtrlFrame(testEOTFrame, EOT);
+	size_t frameLen = 3;
+	PWriteParams writeParams = new WriteParams(portHandle, testEOTFrame, frameLen);
+	
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
-	//while (GetMessage(&Msg, NULL, 0, 0))
-	//{
-	//	TranslateMessage(&Msg);
-	//	DispatchMessage(&Msg);
-	//}
-	//
-	//return (int)Msg.wParam;
+	while (GetMessage(&Msg, NULL, 0, 0))
+	{
+		TranslateMessage(&Msg);
+		DispatchMessage(&Msg);
+	}
+	
+	return (int)Msg.wParam;
 }
 
 /*-------------------------------------------------------------------------------------
@@ -289,20 +205,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			}
 
 			char ctrlFrame[3] = {};
-			wp.frame = CurrentSendingCharArrKieran;
-			wp.portHandle = portHandle;
+			wp->frame = CurrentSendingCharArrKieran;
+			wp->portHandle = portHandle;
 			
-			generateFrame(ctrlFrame, NULL, ENQ, &wp);
-			ENQ_FLAG = true;
-			//MessageBox(hwnd, "send enq", "sent enq", MB_OK);
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tSENDING ENQ, BEFORE GENERATE FRAME\n";
+			generateFrame(ctrlFrame, NULL, ENQ, wp);
+			file << time(0) << ": \tSENDING ENQ, AFTERGENERATE FRAME\n";
+		
+
+			file << time(0) << ": \tRight before setting ENQ_FLAG to true.\n";
+			VariableManager& vm = VariableManager::getInstance();
+			vm.set_ENQ_FLAG(true);
+			file << time(0) << ": \tRight after setting ENQ_FLAG to true." << vm.get_ENQ_FLAG() << "\n";
 			
-
-
-			//char dataFrame3[1024] = {}; //for test; to be removed
-			//char reallyDifferent2[1021] = { 'w', 'o', 'w', -1 }; //for test; to be removed
-			//generateDataFrame(dataFrame3, reallyDifferent2); //for test; to be removed
-			//receiveFrame(dataFrame3, rtp); //for test; to be removed
-
+			file.close();
 			break;
 		}
 		break;
