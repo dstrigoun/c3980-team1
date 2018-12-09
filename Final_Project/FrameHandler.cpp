@@ -25,7 +25,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 	// check type of frame
 	if (frame[0] == SYN) {
-		MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
+		//MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
 
 
 		if (frame[1] == DC1 || frame[1] == DC2) {
@@ -39,7 +39,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	}
 	else {
 		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
-		MessageBox(*rtp->hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
+		//MessageBox(*rtp->hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
 
 		std::ofstream file;
 		file.open("log.txt", std::fstream::app);
@@ -71,14 +71,34 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --	Call this generic send method and send a frame based on parameters provided.
 --------------------------------------------------------------------------------------*/
 void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
-	(ctrl != NULL) ? generateCtrlFrame(frame, ctrl)
+	char localFrame[3] = {};
+	std::ofstream file;
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before pixking type of frame\n";
+	file.close();
+	(ctrl != NULL) ? generateCtrlFrame(localFrame, ctrl)
 		: generateDataFrame(frame, data);
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before setting frame length \n";
+	file.close();
 	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
 	//copy in frame info to wp char azrr
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before copying frame into WP \n";
+	file.close();
 	for (int i = 0; i < wp->frameLen; i++) {
-		wp->frame[i] = frame[i];
+		file.open("log.txt", std::fstream::app);
+		file << time(0) << ": \tIn loop " << i << std::endl ;
+		file.close();
+		wp->frame[i] = localFrame[i];
 	}
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame before send frame to port \n";
+	file.close();
 	sendFrame(wp);
+	file.open("log.txt", std::fstream::app);
+	file << time(0) << ": \tIn Generate Frame after send frame to port \n";
+	file.close();
 	//start sender thread here with the above created frame
 }
 
@@ -211,13 +231,20 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			file.close();
 		}
 		else if (ctrlChar == ENQ && !ENQ_FLAG) {
-			char ctrlFrame[3];
-			WriteParams wp(rtp->hComm, ctrlFrame, 3);
-			generateFrame(ctrlFrame, nullptr, ACK, &wp);
-			curState = "RECEIVE";
-			MessageBox(*rtp->hwnd, "Recieve State", "Receive State", MB_OK);
-
+			
+			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
+			//WriteParams wp(rtp->hComm, ctrlFrame, 3);
 			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tReceived ENQ, BEFORE GENERATE FRAME\n";
+			file.close();
+			generateFrame(ctrlFrame, nullptr, ACK, &wp);
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \tReceived ENQ, AFTERGENERATE FRAME\n";
+			file.close();
+			curState = "RECEIVE";
+			//MessageBox(*rtp->hwnd, "Recieve State", "Receive State", MB_OK);
+
 			file.open("log.txt", std::fstream::app);
 			file << time(0) << ": \tReceived ENQ, go to RECEIVE\n";
 			file.close();
@@ -225,7 +252,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		else if (ctrlChar == ACK && ENQ_FLAG) {
 			curState = "SEND";
 			unfinishedTransmission = true;
-			MessageBox(*rtp->hwnd, "Send State", "Send State", MB_OK);
+			//MessageBox(*rtp->hwnd, "Send State", "Send State", MB_OK);
 
 
 			std::ofstream file;

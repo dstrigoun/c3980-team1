@@ -9,6 +9,7 @@
 #include "FrameHandler.h"
 #include "EventHandler.h"
 #include "WriteHandler.h"
+#include "WriteParams.h"
 
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
@@ -18,6 +19,7 @@ static std::string curState = "IDLE";
 static time_t LAST_EOT_RECEIVED = time(0);
 static bool ENQ_FLAG = false;
 static bool unfinishedTransmission = false;
+static WriteParams wp(NULL, NULL, NULL);
 
 int randomNumberGenerator(int min, int max);
 
