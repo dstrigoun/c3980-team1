@@ -185,13 +185,12 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	wp->portHandle = vm.get_portHandle();
 
 	debugMessage("Current State: " + vm.get_curState());
-	debugMessage("ENQ_FLAG: " + vm.get_ENQ_FLAG());
+	debugMessage("ENQ_FLAG: " + (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE");
 
 	// handle behaviour based on control char received
 	if (vm.get_curState() == "IDLE") {
 		if (ctrlChar == EOT) {
-			LAST_EOT_RECEIVED = time(0);
-
+			updateLastEOTReceived(time(0));
 			debugMessage("Received EOT");
 		}
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
