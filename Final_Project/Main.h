@@ -21,6 +21,8 @@ static bool unfinishedTransmission = false;
 
 int randomNumberGenerator(int min, int max);
 
+void goToIdle();
+
 void triggerRandomWait();
 
 DWORD WINAPI checkIdleTimeout(LPVOID n);

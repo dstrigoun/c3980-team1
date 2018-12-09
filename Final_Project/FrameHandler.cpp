@@ -220,6 +220,14 @@ void readCtrlFrame(const char* frame) {
 			file.close();
 		}
 	}
+	else if (curState == "RECEIVE") 
+	{
+		if (ctrlChar == EOT) 
+		{
+			curState = "IDLE";
+			goToIdle();
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------------------

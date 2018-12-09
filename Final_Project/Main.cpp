@@ -228,6 +228,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 }
 
 /*-------------------------------------------------------------------------------------
+--	FUNCTION:	goToIdle
+--
+--	DATE:			December 8th, 2018
+--
+--	REVISIONS:		December 8th, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		void goToIdle()
+--
+--	RETURNS:		void
+--
+--	NOTES:
+--	Call this to start IDLE functions
+--------------------------------------------------------------------------------------*/
+void goToIdle()
+{
+	triggerRandomWait();
+
+	// check to see if there's data
+	// start all idle threads
+
+}
+
+/*-------------------------------------------------------------------------------------
 --	FUNCTION:	triggerRandomWait
 --
 --	DATE:			November 19, 2018
