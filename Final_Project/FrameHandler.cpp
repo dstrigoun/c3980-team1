@@ -214,7 +214,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	{
 		if (ctrlChar == EOT) 
 		{
-			vm.set_curState("IDLE");
 			goToIdle();
 		}
 	}

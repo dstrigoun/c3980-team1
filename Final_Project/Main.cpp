@@ -250,7 +250,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 --------------------------------------------------------------------------------------*/
 void goToIdle()
 {
-	triggerRandomWait();
+	VariableManager& vm = VariableManager::getInstance();
+	if (vm.get_curState == "SEND")
+	{
+		triggerRandomWait();
+	}
+	vm.set_curState("IDLE");
+
 
 	// check to see if there's data
 	// start all idle threads
