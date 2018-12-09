@@ -12,15 +12,16 @@ using namespace std;
 static ifstream* PcurrUploadFile;
 static LPCSTR lastFrameSent;
 static HANDLE* Pport;
-static int numFramesSent;
-static int numFramesReSent;
 
-void initWriteHandler(ifstream* file, HANDLE* port);
 
-void sendDataFrame();
+void initWriteHandler(ifstream* file);
 
-void resendDataFrame();
+void sendCtrlFrame(LPVOID writeParams);
 
-DWORD WINAPI sendFrame(LPVOID writeParams);
+void sendDataFrame(LPVOID writeParams);
+
+void resendDataFrame(LPVOID writeParams);
+
+void sendFrame(LPVOID writeParams);
 
 DWORD WINAPI sendEOTs(LPVOID writeParams);

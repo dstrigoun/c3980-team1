@@ -202,17 +202,30 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			currUploadFile = openFile(&hwnd);
 			LPCSTR temp;
 			
-			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
+			initWriteHandler(&currUploadFile);
+
+			/*while ((temp = getPayload(&currUploadFile))[0] != EOF) {
 				MessageBox(hwnd, temp, "title", MB_OK);
-			}
+			}*/
 
 			char ctrlFrame[3] = {};
 			wp->frame = CurrentSendingCharArrKieran;
 			wp->portHandle = vm.get_portHandle();
 			
-			generateFrame(ctrlFrame, NULL, ENQ, wp);		
+			generateFrame(ctrlFrame, NULL, ENQ, wp);
 
+			char ackFrameTest[3] = {};
+			generateCtrlFrame(ackFrameTest, ACK);
+			char enqFrameTest[3] = {};
+			generateCtrlFrame(enqFrameTest, ENQ);
+
+			PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
+
+			//receiveFrame(enqFrameTest, rtp);
 			vm.set_ENQ_FLAG(true);
+			receiveFrame(ackFrameTest, rtp);
+			receiveFrame(ackFrameTest, rtp);
+			
 			break;
 		}
 		break;
@@ -252,7 +265,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 void goToIdle()
 {
 	VariableManager& vm = VariableManager::getInstance();
-	if (vm.get_curState == "SEND")
+	if (vm.get_curState() == "SEND")
 	{
 		triggerRandomWait();
 	}
@@ -261,8 +274,6 @@ void goToIdle()
 
 	// check to see if there's data
 	// start all idle threads
-	VariableManager& vm = VariableManager::getInstance();
-
 
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
@@ -443,8 +454,4 @@ void sendCharacter(HWND hwnd) {
 
 void updateLastEOTReceived(time_t receivedTime) {
 	LAST_EOT_RECEIVED = receivedTime;
-}
-
-void updateCurState(string newState) {
-	curState = newState;
 }

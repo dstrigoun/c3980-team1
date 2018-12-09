@@ -38,6 +38,15 @@ public:
 
 	void set_curState(std::string curState) { this->curState = curState; }
 	std::string get_curState() { return this->curState; }
+
+	void reset_numFramesSent() { this->numFramesSent = 0; }
+	void increment_numFramesSent() { this->numFramesSent++; }
+	int get_numFramesSent() { return this->numFramesSent; }
+
+	void reset_numFramesReSent() { this->numFramesReSent = 0; }
+	void increment_numFramesReSent() { this->numFramesReSent++; }
+	int get_numFramesReSent() { return this->numFramesReSent; }
+
 private:
 	VariableManager() {}
 
@@ -45,5 +54,7 @@ private:
 	HWND hwnd;
 	HANDLE portHandle;
 	std::string curState;
+	int numFramesSent;
+	int numFramesReSent;
 
 };

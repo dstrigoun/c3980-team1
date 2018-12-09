@@ -227,11 +227,11 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			//update DC1/DC2
 			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
 			//trigger send frame
-			sendDataFrame();
+			sendDataFrame(wp);
 			break;
 		case NAK:
 			//trigger resend frame
-			resendDataFrame();
+			resendDataFrame(wp);
 			break;
 		}
 	}

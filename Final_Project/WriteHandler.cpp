@@ -1,11 +1,8 @@
 #include "WriteHandler.h"
 
-void initWriteHandler(ifstream* file, HANDLE* port)  
+void initWriteHandler(ifstream* file)  
 {
 	PcurrUploadFile = file;
-	Pport = port;
-	numFramesSent = 0;
-	numFramesReSent = 0;
 };
 
 /*-------------------------------------------------------------------------------------
@@ -27,32 +24,50 @@ void initWriteHandler(ifstream* file, HANDLE* port)
 --	NOTES:
 --	Pass this thread function to Sender thread to send out a frame
 --------------------------------------------------------------------------------------*/
-DWORD WINAPI sendFrame(LPVOID writeParams)
+void sendFrame(LPVOID writeParams)
 {
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 	
-	sendFrameToPort(wp->portHandle,wp->frame, wp->frameLen);
+	(wp->frameLen == 3) ? sendCtrlFrame(writeParams) : sendDataFrame(writeParams);
+	
+	//sendFrameToPort(wp->portHandle,wp->frame, wp->frameLen);
 
-	return 0;
 }
 
-void sendDataFrame()
+void sendCtrlFrame(LPVOID writeParams) 
 {
-	sendFrameToPort(&Pport, (char*) getPayload(PcurrUploadFile)[0],1024);
-	numFramesSent++;
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
+	sendFrameToPort(wp->portHandle, wp->frame, wp->frameLen);
+
+	debugMessage("CtrlFrame Sent Successfully");
+}
+
+void sendDataFrame(LPVOID writeParams)
+{
+	VariableManager &vm = VariableManager::getInstance();
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
+
+	sendFrameToPort(wp->portHandle, (char*) getPayload(PcurrUploadFile)[0],wp->frameLen);
+	vm.increment_numFramesSent();
 
 	debugMessage("DataFrame Sent Successfully");
-	debugMessage("Number of Data Frames Sent: " + numFramesSent);
+	debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
 }
 
-void resendDataFrame() 
+void resendDataFrame(LPVOID writeParams)
 {
+	VariableManager &vm = VariableManager::getInstance();
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
+
 	sendFrameToPort(&Pport, (char*) lastFrameSent, 1024);
-	numFramesReSent++;
+	vm.increment_numFramesReSent();
 
 	debugMessage("Received NAK for DataFrame");
-	debugMessage("Number of resends: " + numFramesReSent);
+	debugMessage("Number of resends: " + to_string(vm.get_numFramesReSent()));
 
 }
 
