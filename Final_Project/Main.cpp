@@ -456,8 +456,4 @@ void create_CTRL_frames() {
 
 	generateCtrlFrame(tempFrame, EOT);
 	vm.set_EOT_frame(tempFrame);
-
-	tempFrame = 0;
-	generateCtrlFrame(tempFrame, ENQ);
-	
 }
