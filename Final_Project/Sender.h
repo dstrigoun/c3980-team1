@@ -5,4 +5,4 @@
 
 
 
-void sendFrameToPort(HANDLE portHandle, char* frame, size_t frameLen);
+void sendFrameToPort(char* frame, size_t frameLen);

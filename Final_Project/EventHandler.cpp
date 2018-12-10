@@ -26,8 +26,8 @@ DWORD WINAPI pollForEvents(LPVOID n)
 	VariableManager &vm = VariableManager::getInstance();
 	PREADTHREADPARAMS readTP;
 	readTP = PREADTHREADPARAMS(n);
-	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
-	SetCommTimeouts(vm.get_portHandle(), &timeouts);
+//	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
+//	SetCommTimeouts(vm.get_portHandle(), &timeouts);
 	DWORD waitResult;
 
 	while (1) {

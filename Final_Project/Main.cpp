@@ -61,7 +61,6 @@ LPCSTR lpszCommName = "com1";
 char str[80] = "";
 char CurrentSendingCharArrKieran[1024];
 
-ifstream currUploadFile;
 PREADTHREADPARAMS rtp;
 
 
@@ -114,6 +113,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	VariableManager& vm = VariableManager::getInstance();
 	vm.set_curState("IDLE");
+	vm.set_countDataFrameBytesRead(0);
 
 	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		600, 400, NULL, NULL, hInst, NULL);
@@ -137,6 +137,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		//PostQuitMessage(0); // end program since opening port failed
 	}
 	vm.set_portHandle(tempPortHandle);
+	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
+	SetCommTimeouts(vm.get_portHandle(), &timeouts);
 
 	//wp.portHandle = portHandle;
 	//wp.frame = CurrentSendingCharArrKieran;
@@ -154,7 +156,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	char testEOTFrame[3];
 	generateCtrlFrame(testEOTFrame, EOT);
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(testEOTFrame, frameLen);
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
@@ -198,18 +200,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		case IDM_UPLOAD:
 			debugMessage("Clicked upload");
 
-			currUploadFile = openFile(&hwnd);
-			LPCSTR temp;
-			
-			while ((temp = getPayload(&currUploadFile))[0] != EOF) {
-				MessageBox(hwnd, temp, "title", MB_OK);
-			}
+			ifstream* kieransTempButNotReallyTempUploadFile = new ifstream;
+			*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
+			vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
 
-			char ctrlFrame[3] = {};
 			wp->frame = CurrentSendingCharArrKieran;
-			wp->portHandle = vm.get_portHandle();
 			
-			generateFrame(ctrlFrame, NULL, ENQ, wp);		
+			generateFrame(NULL, ENQ, wp);
 
 			vm.set_ENQ_FLAG(true);
 			break;
@@ -251,7 +248,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 void goToIdle()
 {
 	VariableManager& vm = VariableManager::getInstance();
-	if (vm.get_curState == "SEND")
+	if (vm.get_curState() == "SEND")
 	{
 		triggerRandomWait();
 	}
@@ -260,7 +257,6 @@ void goToIdle()
 
 	// check to see if there's data
 	// start all idle threads
-	VariableManager& vm = VariableManager::getInstance();
 
 
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
@@ -268,7 +264,7 @@ void goToIdle()
 	char testEOTFrame[3];
 	generateCtrlFrame(testEOTFrame, EOT);
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(testEOTFrame, frameLen);
 
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 }

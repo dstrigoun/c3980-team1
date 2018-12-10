@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <string>
+#include <fstream>
 /*
 curr state
 enq flag
@@ -38,6 +39,15 @@ public:
 
 	void set_curState(std::string curState) { this->curState = curState; }
 	std::string get_curState() { return this->curState; }
+	
+	void set_currUploadFile(std::ifstream* currUploadFile) { this->currUploadFile = currUploadFile; }
+	std::ifstream* get_currUploadFile() { return this->currUploadFile; }
+
+	void set_countDataFrameBytesRead(int i) {
+		countDataFrameBytesRead = i;
+	}
+	int get_countDataFrameBytesRead() { return countDataFrameBytesRead; }
+
 private:
 	VariableManager() {}
 
@@ -45,5 +55,7 @@ private:
 	HWND hwnd;
 	HANDLE portHandle;
 	std::string curState;
+	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
+	int countDataFrameBytesRead;
 
 };

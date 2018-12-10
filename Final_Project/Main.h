@@ -24,7 +24,7 @@ static DWORD CHECK_IDLE_TIMEOUT_MS = 5000;
 static time_t LAST_EOT_RECEIVED = time(0);
 
 static bool unfinishedTransmission = false;
-static PWriteParams wp = new WriteParams(NULL, NULL, NULL);
+static PWriteParams wp = new WriteParams(NULL, NULL);
 
 int randomNumberGenerator(int min, int max);
 
