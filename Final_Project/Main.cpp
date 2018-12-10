@@ -58,7 +58,7 @@ HANDLE senderThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 COMMCONFIG	cc;
-LPCSTR lpszCommName = "com3";
+LPCSTR lpszCommName = "com1";
 char str[80] = "";
 char CurrentSendingCharArrKieran[1024];
 
@@ -146,7 +146,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	cc.wVersion = 0x100;
 
 	SetCommMask(vm.get_portHandle(), EV_RXCHAR);
-
+	debugMessage("Starting Connection");
 	//start thread with checkIdleTimeout
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
@@ -219,7 +219,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 			generateFrame(dataFrame, temp, NULL, wp);
 
-			sendFrameToPort(wp->portHandle, wp->frame, 1024);
+			//sendFrameToPort(wp->portHandle, wp->frame, 1024);
 
 			char ackFrameTest[3] = {};
 			generateCtrlFrame(ackFrameTest, ACK);
@@ -238,6 +238,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		break;
 
 	case WM_DESTROY:	// Terminate program
+		debugMessage("Connected Terminated");
 		SetEvent(stopThreadEvent);
 		CloseHandle(hIdleTimeoutThrd);
 		CloseHandle(eventHandlerThrd);
@@ -424,7 +425,7 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 void terminateProgram() 
 {
 	MessageBox(NULL, "Lost connection.", "", MB_OK);
-
+	debugMessage("Lost Connection");
 	SetEvent(stopThreadEvent);
 	CloseHandle(hIdleTimeoutThrd);
 	CloseHandle(eventHandlerThrd);
