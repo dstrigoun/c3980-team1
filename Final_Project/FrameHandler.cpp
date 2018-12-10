@@ -322,6 +322,10 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = nextFrameToSend;
+
+	std::stringstream message;
+	message << "Generate CTRL frame: " << (LPSTR)ctrlFrame << std::endl;
+	debugMessage(message.str());
 }
 
 /*-------------------------------------------------------------------------------------

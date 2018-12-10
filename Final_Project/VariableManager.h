@@ -17,8 +17,6 @@ wp?
 */
 
 class VariableManager {
-
-
 public:
 	static VariableManager& getInstance() {
 		static VariableManager instance;
@@ -44,6 +42,9 @@ public:
 
 	void set_LAST_DATA(time_t current) { this->LAST_DATA_FRAME_RECEIVED = current; }
 	DWORD get_LAST_DATA() { return this->LAST_DATA_FRAME_RECEIVED; }
+
+	void set_EOT_frame(char* frame) { this->EOT_frame = frame; }
+	char* get_EOT_frame() { return this->EOT_frame; }
 private:
 	VariableManager() {}
 
@@ -53,4 +54,6 @@ private:
 	std::string curState;
 	DWORD LAST_EOT_RECEIVED;
 	DWORD LAST_DATA_FRAME_RECEIVED;
+
+	char* EOT_frame;
 };
