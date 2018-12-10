@@ -151,10 +151,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
 
-	char testEOTFrame[3];
-	generateCtrlFrame(testEOTFrame, EOT);
+	create_CTRL_frames();
+
+
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), vm.get_EOT_frame(), frameLen);
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
@@ -266,16 +267,13 @@ void goToIdle()
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
 	debugMessage("IDLE timeout created, starting to send EOTs");
-
-	char testEOTFrame[3] = {};
-	generateCtrlFrame(testEOTFrame, EOT);
 		
 	std::stringstream message;
-	message << "EOT Frame to start thread: " << (LPSTR)testEOTFrame << std::endl;
+	message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
 	debugMessage(message.str());
 
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(vm.get_portHandle(), vm.get_EOT_frame(), frameLen);
 
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 }
@@ -450,4 +448,16 @@ void sendCharacter(HWND hwnd) {
 	sprintf_s(str, "%c", LPCWSTR('a'));
 	WriteFile(vm.get_portHandle(), str, 1, 0, NULL);
 	//ReleaseDC(hwnd, hdc); // Release device context
+}
+
+void create_CTRL_frames() {
+	VariableManager& vm = VariableManager::getInstance();
+	char tempFrame[3] = {};
+
+	generateCtrlFrame(tempFrame, EOT);
+	vm.set_EOT_frame(tempFrame);
+
+	tempFrame = 0;
+	generateCtrlFrame(tempFrame, ENQ);
+	
 }

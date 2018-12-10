@@ -46,3 +46,5 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	LPSTR lspszCmdParam, int nCmdShow);
 
 void sendCharacter(HWND hwnd);
+
+void create_CTRL_frames();

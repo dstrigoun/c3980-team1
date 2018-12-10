@@ -45,6 +45,18 @@ public:
 
 	void set_EOT_frame(char* frame) { this->EOT_frame = frame; }
 	char* get_EOT_frame() { return this->EOT_frame; }
+
+	void set_ENQ_frame(char* frame) { this->ENQ_frame = frame; }
+	char* get_ENQ_frame() { return this->ENQ_frame; }
+
+	void set_ACK_0_frame(char* frame) { this->ACK_frame_0 = frame; }
+	char* get_ACK_0_frame() { return this->ACK_frame_0; }
+
+	void set_ACK_1_frame(char* frame) { this->ACK_frame_1 = frame; }
+	char* get_ACK_1_frame() { return this->ACK_frame_1; }
+
+	void set_NAK_frame(char* frame) { this->NAK_frame = frame; }
+	char* get_NAK_frame() { return this->NAK_frame; }
 private:
 	VariableManager() {}
 
@@ -56,4 +68,8 @@ private:
 	DWORD LAST_DATA_FRAME_RECEIVED;
 
 	char* EOT_frame;
+	char* ENQ_frame;
+	char* ACK_frame_0;
+	char* ACK_frame_1;
+	char* NAK_frame;
 };
