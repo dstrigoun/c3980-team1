@@ -51,13 +51,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 	}
 	else {
-		OutputDebugString("Frame Corrupt, 1st Byte not SYN\n");
-		//MessageBox(*rtp->hwnd, "Frame Corrupt, 1st Byte not SYN\n", "Frame Corrupt, 1st Byte not SYN\n", MB_OK);
-
-		std::ofstream file;
-		file.open("log.txt", std::fstream::app);
-		file << time(0) << ": \tFrame Corrupt, 1st Byte not SYN\n";
-		file.close();
+		debugMessage("Frame Corrupt, 1st Byte not SYN");
 	}
 }
 
@@ -106,6 +100,7 @@ void generateFrame(const char* data, char ctrl, PWriteParams wp) {
 	sendFrame(wp);
 	
 	//start sender thread here with the above created frame
+
 }
 
 /*-------------------------------------------------------------------------------------
@@ -143,11 +138,7 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 
 		//check for dummy CRC bit
 		if (frame[1023] == 1) {
-			OutputDebugString("Dummy CRC bit works\n");
-			std::ofstream log_file;
-			log_file.open("log.txt", std::fstream::app);
-			log_file << time(0) << ":\tCRC bit is correct.\n";
-			log_file.close();
+			debugMessage("CRC bit is correct");
 		}
 
 		// CRC code that does not work
@@ -163,8 +154,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 		//}
 		//OutputDebugString("CRC failed\n");
 		//-----------------------------------------------------
-
-		OutputDebugString("in readDataFrame");
 
 		char data[1021] = {};
 
@@ -197,13 +186,8 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 			log_file.close();
 
 			if (data[i] == -1) {
-				//OutputDebugString("Found EOF in data\n");
 
-				std::ofstream log_file;
-				log_file.open("log.txt", std::fstream::app);
-				log_file << time(0) << ":\n\tReached EOF in data.\n";
-				log_file.close();
-
+				debugMessage("Reached EOF in data");
 				unfinishedTransmission = false;
 				data_size = i;
 				break;
@@ -249,63 +233,34 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char CurrentSendingCharArrKieran[1024] = {};
 	wp->frame = CurrentSendingCharArrKieran;
 
-
-	std::ofstream afile;
-	afile.open("log.txt", std::fstream::app);
-	afile << time(0) << ": \tCurrent state: " << vm.get_curState() << "\n";
-	afile << time(0) << ": \tENQ_FLAG: " << vm.get_ENQ_FLAG() << "\n";
-	afile.close();
+	debugMessage("Current State: " + vm.get_curState());
+	debugMessage("ENQ_FLAG: " + (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE");
 
 	// handle behaviour based on control char received
 	if (vm.get_curState() == "IDLE") {
 		if (ctrlChar == EOT) {
-			LAST_EOT_RECEIVED = time(0);
-			char cur2[16] = "";
-			sprintf_s(cur2, "%d", LAST_EOT_RECEIVED);
 			updateLastEOTReceived(time(0));
-			OutputDebugString(cur2);
-			OutputDebugString("\n");
-
-			std::ofstream file;
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tReceived EOT\n";
-			file.close();
+			debugMessage("Received EOT");
 		}
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
-			
-			std::ofstream file;
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tReceived ENQ & SENDING ACK, BEFORE GENERATE FRAME\n";
-			file.close();
+			debugMessage("Received ENQ & sending ACK");
+
+			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			generateFrame(nullptr, ACK, wp);
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tReceived ENQ & SENDING ACK, AFTERGENERATE FRAME\n";
-			file.close();
+
 			vm.set_curState("RECEIVE");
 
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tReceived ENQ, go to RECEIVE\n";
-			file.close();
+			debugMessage("curState is now RECEIVE");
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
 			unfinishedTransmission = true;
-			//MessageBox(*rtp->hwnd, "Send State", "Send State", MB_OK);
-
-
-			std::ofstream file;
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tENQ was approved, go to SEND\n";
-			file.close();
 
 			//send the first data frame
 			
 			char* payload = getPayload();
 
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tGot payload\n";
-			file.close();
-
+			debugMessage("Got payload");
 			generateFrame(payload, NULL, wp);
 		}
 	}
@@ -334,6 +289,11 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 			generateFrame(nullptr, ACK, wp);
 
+			debugMessage("ENQ was approved, go to SEND state");
+		}
+		else if (ctrlChar == EOT)
+		{
+			goToIdle();
 		}
 	}
 }
@@ -385,10 +345,7 @@ void generateDataFrame(char* dataFrame, const char* data) {
 	char dummyCRC = 1;
 	dataFrame[1023] = dummyCRC;
 
-	std::ofstream log_file;
-	log_file.open("log.txt", std::fstream::app);
-	log_file << time(0) << ":\tGenerated CRC bit is: " << dummyCRC << "\n";
-	log_file.close();
+	debugMessage("Generated CRC bit is: " + dummyCRC);
 
 	// CRC code that does not work
 	//------------------------------------------------------

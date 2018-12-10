@@ -24,10 +24,7 @@ void sendFrameToPort(char* frame, size_t frameLen) {
 	VariableManager &vm = VariableManager::getInstance();
 	DWORD numBytesWritten;
 	if (!WriteFile(vm.get_portHandle(), frame, frameLen, &numBytesWritten, NULL)) {
-		std::ofstream file;
-		file.open("log.txt", std::fstream::app);
-		file << time(0) << ": \tWrite File failed.\n";
-		file.close();
+		debugMessage("Write File failed");
 	}
 	
 }
