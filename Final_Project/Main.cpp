@@ -113,6 +113,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	VariableManager& vm = VariableManager::getInstance();
 	vm.set_curState("IDLE");
+	vm.set_countDataFrameBytesRead(0);
 
 	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		600, 400, NULL, NULL, hInst, NULL);

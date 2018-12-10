@@ -23,15 +23,27 @@
 --	
 --------------------------------------------------------------------------------------*/
 void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
-
+	VariableManager &vm = VariableManager::getInstance();
+	if (vm.get_countDataFrameBytesRead() > 0
+		&& !(frame[1] == DC1 || frame[1] == DC2)) {
+		vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+		readDataFrame(frame, *(rtp->numBytesRead), false);
+		if (vm.get_countDataFrameBytesRead() == 1024) {
+			vm.set_countDataFrameBytesRead(0);
+		}
+	}
 	// check type of frame
-	if (frame[0] == SYN) {
+	 else if (frame[0] == SYN) {
 		//MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
 
 
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
-			readDataFrame(frame);
+			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+			readDataFrame(frame, *(rtp->numBytesRead), true);
+			if (vm.get_countDataFrameBytesRead() == 1024) {
+				vm.set_countDataFrameBytesRead(0);
+			}
 		}
 		else {
 			//ctrl frame
@@ -119,7 +131,7 @@ void generateFrame(const char* data, char ctrl, PWriteParams wp) {
 --	NOTES:
 --	Call this to read a data frame and handle the data retrieved from the frame
 --------------------------------------------------------------------------------------*/
-void readDataFrame(const char* frame) {
+void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
 	std::ofstream log_file;
 
 	if (false /*frame[1] != nextFrameToReceive*/) { //tempeoaraliy made this always fail
@@ -155,15 +167,30 @@ void readDataFrame(const char* frame) {
 		OutputDebugString("in readDataFrame");
 
 		char data[1021] = {};
-		
-		//char data[2048] = {};
-		for (int i = 0; i < 1021; i++) {
-			data[i] = frame[2 + i];
+
+		if (firstPartOfFrame) {
+			for (int i = 0; i < 1021; i++) {
+				data[i] = frame[2 + i];
+			}
 		}
+		else {
+			for (int i = 0; i < 1021; i++) {
+				data[i] = frame[i];
+			}
+		}
+		
+		
 
 		// Check for EOF (-1) in the data
 		//int data_size = sizeof(data) / sizeof(*data);
-		int data_size = 1021;
+		int data_size = 0;
+		if (firstPartOfFrame) {
+			data_size = numBytesRead -2;
+		}
+		else {
+			data_size = numBytesRead;
+		}
+		
 		for (int i = 0; i < data_size; ++i) {
 			log_file.open("log.txt", std::fstream::app);
 			log_file << data[i];

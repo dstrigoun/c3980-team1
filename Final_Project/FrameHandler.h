@@ -26,7 +26,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp);
 void generateFrame(const char* data, char ctrl, PWriteParams wp);
 
 
-void readDataFrame(const char* frame);
+void readDataFrame(const char* frame, DWORD numBytesSent, bool firstPartOfFrame);
 void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp);
 
 void generateDataFrame(char* dataFrame, const char* data);
