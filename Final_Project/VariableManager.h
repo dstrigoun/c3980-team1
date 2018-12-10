@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <string>
+#include <fstream>
 /*
 curr state
 enq flag
@@ -57,6 +58,15 @@ public:
 
 	void set_NAK_frame(char* frame) { this->NAK_frame = frame; }
 	char* get_NAK_frame() { return this->NAK_frame; }
+	
+	void set_currUploadFile(std::ifstream* currUploadFile) { this->currUploadFile = currUploadFile; }
+	std::ifstream* get_currUploadFile() { return this->currUploadFile; }
+
+	void set_countDataFrameBytesRead(int i) {
+		countDataFrameBytesRead = i;
+	}
+	int get_countDataFrameBytesRead() { return countDataFrameBytesRead; }
+
 private:
 	VariableManager() {}
 
@@ -66,6 +76,9 @@ private:
 	std::string curState;
 	DWORD LAST_EOT_RECEIVED;
 	DWORD LAST_DATA_FRAME_RECEIVED;
+
+	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
+	int countDataFrameBytesRead;
 
 	char* EOT_frame;
 	char* ENQ_frame;

@@ -1,5 +1,6 @@
 #include "FrameHandler.h"
 #include "ReadThreadParams.h"
+#include "fileChooser.h"
 
 DWORD timeoutThreadId;
 HANDLE hTimeoutThrd;
@@ -24,13 +25,25 @@ HANDLE hTimeoutThrd;
 --	NOTES:
 --	
 --------------------------------------------------------------------------------------*/
-void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) 
-{
+void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
+	VariableManager &vm = VariableManager::getInstance();
+	if (vm.get_countDataFrameBytesRead() > 0
+		&& !(frame[1] == DC1 || frame[1] == DC2)) {
+		vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+		readDataFrame(frame, *(rtp->numBytesRead), false);
+		if (vm.get_countDataFrameBytesRead() == 1024) {
+			vm.set_countDataFrameBytesRead(0);
+		}
+	}
 	// check type of frame
-	if (frame[0] == SYN) {
+	 else if (frame[0] == SYN) {
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
-			readDataFrame(frame);
+			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+			readDataFrame(frame, *(rtp->numBytesRead), true);
+			if (vm.get_countDataFrameBytesRead() == 1024) {
+				vm.set_countDataFrameBytesRead(0);
+			}
 		}
 		else {
 			//ctrl frame
@@ -64,17 +77,30 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp)
 --	NOTES:
 --	Call this generic send method and send a frame based on parameters provided.
 --------------------------------------------------------------------------------------*/
-void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
-	char localFrame[3] = {};
-	(ctrl != NULL) ? generateCtrlFrame(localFrame, ctrl)
-		: generateDataFrame(frame, data);
-
+void generateFrame(const char* data, char ctrl, PWriteParams wp) {
+	char localCtlFrame[3] = {};
+	char localDataFrame[1024] = {};
+	(ctrl != NULL) ? generateCtrlFrame(localCtlFrame, ctrl)
+		: generateDataFrame(localDataFrame, data);
+	
 	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
-	//copy in frame info to wp char azrr
-	for (int i = 0; i < wp->frameLen; i++) {
-		wp->frame[i] = localFrame[i];
+	
+	if (ctrl != NULL) {
+		for (int i = 0; i < wp->frameLen; i++) {
+			wp->frame[i] = localCtlFrame[i];
+		}
 	}
+	else {
+		for (int i = 0; i < wp->frameLen; i++) {
+			wp->frame[i] = localDataFrame[i];
+		}
+	}
+	
+	
 	sendFrame(wp);
+	
+	//start sender thread here with the above created frame
+
 }
 
 /*-------------------------------------------------------------------------------------
@@ -100,8 +126,10 @@ void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
 --	NOTES:
 --	Call this to read a data frame and handle the data retrieved from the frame
 --------------------------------------------------------------------------------------*/
-void readDataFrame(const char* frame) {
-	if (frame[1] != nextFrameToReceive) {
+void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
+	std::ofstream log_file;
+
+	if (false /*frame[1] != nextFrameToReceive*/) { //tempeoaraliy made this always fail
 		//duplicate frame 
 	}
 	else {
@@ -128,28 +156,53 @@ void readDataFrame(const char* frame) {
 		//-----------------------------------------------------
 
 		char data[1021] = {};
-		for (int i = 0; i < 1021; i++) {
-			data[i] = frame[2 + i];
+
+		if (firstPartOfFrame) {
+			for (int i = 0; i < 1021; i++) {
+				data[i] = frame[2 + i];
+			}
 		}
+		else {
+			for (int i = 0; i < 1021; i++) {
+				data[i] = frame[i];
+			}
+		}
+		
+		
 
 		// Check for EOF (-1) in the data
-		int data_size = sizeof(data) / sizeof(*data);
-
+		//int data_size = sizeof(data) / sizeof(*data);
+		int data_size = 0;
+		if (firstPartOfFrame) {
+			data_size = numBytesRead -2;
+		}
+		else {
+			data_size = numBytesRead;
+		}
+		
 		for (int i = 0; i < data_size; ++i) {
-			if (data[i] == -1) {
-				debugMessage("Reached EOF in data");
+			log_file.open("log.txt", std::fstream::app);
+			log_file << data[i];
+			log_file.close();
 
+			if (data[i] == -1) {
+
+				debugMessage("Reached EOF in data");
 				unfinishedTransmission = false;
 				data_size = i;
+				break;
 			}
 		}
 
 		std::ofstream file;
-		file.open("test.txt", std::fstream::app);
+		file.open("receive_data.txt", std::fstream::app);
 		for (int i = 0; i < data_size; i++) {
 			file << data[i];
 		}
 		file.close();
+
+		VariableManager &vm = VariableManager::getInstance();
+		vm.set_LAST_DATA(time(0));
 	}
 }
 
@@ -182,7 +235,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char dcChar = frame[2];
 	char CurrentSendingCharArrKieran[1024] = {};
 	wp->frame = CurrentSendingCharArrKieran;
-	wp->portHandle = vm.get_portHandle();
 
 	debugMessage("Current State: " + vm.get_curState());
 	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
@@ -198,7 +250,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			debugMessage("Received ENQ & sending ACK");
 
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
-			generateFrame(ctrlFrame, nullptr, ACK, wp);
+			generateFrame(nullptr, ACK, wp);
 
 			vm.set_curState("RECEIVE");
 			debugMessage("curState is now RECEIVE");
@@ -211,7 +263,12 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			vm.set_curState("SEND");
 			unfinishedTransmission = true;
 
-			debugMessage("ENQ was approved, go to SEND state");
+			//send the first data frame
+			
+			char* payload = getPayload();
+
+			debugMessage("Got payload");
+			generateFrame(payload, NULL, wp);
 		}
 	}
 	else if (vm.get_curState() == "SEND")
@@ -220,10 +277,33 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		{
 			goToIdle();
 		}
+		if (ctrlChar == ACK) {
+			char* payload = getPayload();
+			generateFrame(payload, NULL, wp);
+		}
 	}
-	else if (vm.get_curState() == "RECEIVE")
-	{
-		if (ctrlChar == EOT) 
+	else if (vm.get_curState() == "RECEIVE") {
+		if (ctrlChar == DC1 || ctrlChar == DC2) {
+			bool lastDataFrame = false;
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \t Data content: ";
+			for (int i = 2; i < 1022; i++) {
+				if (frame[i] == EOF) {
+					lastDataFrame = true;
+					break;
+				}
+				file << frame[i];
+				
+			}
+			file << std::endl;
+			file.close();
+
+			generateFrame(nullptr, ACK, wp);
+
+			debugMessage("ENQ was approved, go to SEND state");
+		}
+		else if (ctrlChar == EOT)
 		{
 			goToIdle();
 		}

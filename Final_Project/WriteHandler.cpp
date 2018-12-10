@@ -21,6 +21,7 @@
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI sendFrame(LPVOID writeParams)
 {
+	VariableManager &vm = VariableManager::getInstance();
 	DWORD dwWrite = NULL;
 	DWORD dwBytesWritten = 0;
 
