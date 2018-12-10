@@ -139,6 +139,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 		//PostQuitMessage(0); // end program since opening port failed
 	}
 	vm.set_portHandle(tempPortHandle);
+	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
+	SetCommTimeouts(vm.get_portHandle(), &timeouts);
 
 	//wp.portHandle = portHandle;
 	//wp.frame = CurrentSendingCharArrKieran;

@@ -155,6 +155,8 @@ void readDataFrame(const char* frame) {
 		OutputDebugString("in readDataFrame");
 
 		char data[1021] = {};
+		
+		//char data[2048] = {};
 		for (int i = 0; i < 1021; i++) {
 			data[i] = frame[2 + i];
 		}
@@ -162,14 +164,13 @@ void readDataFrame(const char* frame) {
 		// Check for EOF (-1) in the data
 		//int data_size = sizeof(data) / sizeof(*data);
 		int data_size = 1021;
-
 		for (int i = 0; i < data_size; ++i) {
 			log_file.open("log.txt", std::fstream::app);
 			log_file << data[i];
 			log_file.close();
 
 			if (data[i] == -1) {
-				OutputDebugString("Found EOF in data\n");
+				//OutputDebugString("Found EOF in data\n");
 
 				std::ofstream log_file;
 				log_file.open("log.txt", std::fstream::app);
