@@ -11,8 +11,8 @@
 --
 --	PROGRAMMER:		Jason Kim
 --
---	INTERFACE:		DWORD WINAPI pollForEvents(LPVOID portHandle)
---						LPVOID portHandle: the handle to monitor for incoming frames
+--	INTERFACE:		DWORD WINAPI pollForEvents(LPVOID n)
+--						LPVOID n - the handle to monitor for incoming frames
 --
 --	RETURNS:		returns 0 when infinite loop to poll for received characters exits
 --

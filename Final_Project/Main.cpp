@@ -155,7 +155,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	create_CTRL_frames();
 
-
 	size_t frameLen = 3;
 	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
 
@@ -436,7 +435,7 @@ void terminateProgram()
 --
 --	INTERFACE:		void sendCharacter(HWND hwnd)
 --
---	RETURNS:		n/a
+--	RETURNS:		void
 --
 --	NOTES:
 --	Called to send a character to the port
