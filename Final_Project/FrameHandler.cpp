@@ -2,6 +2,9 @@
 #include "ReadThreadParams.h"
 #include "fileChooser.h"
 
+DWORD timeoutThreadId;
+HANDLE hTimeoutThrd;
+
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
 --
@@ -34,9 +37,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	}
 	// check type of frame
 	 else if (frame[0] == SYN) {
-		//MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
-
-
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
 			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
@@ -194,12 +194,15 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 			}
 		}
 
-		/*std::ofstream file;
-		file.open("test.txt", std::fstream::app);
+		std::ofstream file;
+		file.open("receive_data.txt", std::fstream::app);
 		for (int i = 0; i < data_size; i++) {
 			file << data[i];
 		}
-		file.close();*/
+		file.close();
+
+		VariableManager &vm = VariableManager::getInstance();
+		vm.set_LAST_DATA(time(0));
 	}
 }
 
@@ -234,12 +237,13 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	wp->frame = CurrentSendingCharArrKieran;
 
 	debugMessage("Current State: " + vm.get_curState());
-	debugMessage("ENQ_FLAG: " + (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE");
+	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
+	debugMessage("ENQ_FLAG: " + tempENQ);
 
 	// handle behaviour based on control char received
 	if (vm.get_curState() == "IDLE") {
 		if (ctrlChar == EOT) {
-			updateLastEOTReceived(time(0));
+			vm.set_LAST_EOT(time(0));
 			debugMessage("Received EOT");
 		}
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
@@ -249,8 +253,11 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			generateFrame(nullptr, ACK, wp);
 
 			vm.set_curState("RECEIVE");
-
 			debugMessage("curState is now RECEIVE");
+
+			// start receive timeout thread
+			vm.set_LAST_DATA(time(0));
+			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
@@ -264,7 +271,12 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			generateFrame(payload, NULL, wp);
 		}
 	}
-	else if (vm.get_curState() == "SEND") {
+	else if (vm.get_curState() == "SEND")
+	{
+		if (ctrlChar == EOT)
+		{
+			goToIdle();
+		}
 		if (ctrlChar == ACK) {
 			char* payload = getPayload();
 			generateFrame(payload, NULL, wp);
@@ -390,6 +402,10 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = nextFrameToSend;
+
+	std::stringstream message;
+	message << "Generate CTRL frame: " << (LPSTR)ctrlFrame << std::endl;
+	debugMessage(message.str());
 }
 
 /*-------------------------------------------------------------------------------------
@@ -456,3 +472,42 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 //
 //	return result.checksum() == receivedCRC;
 //}
+
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	receiveTimeout
+--
+--	DATE:			December 8, 2018
+--
+--	REVISIONS:		December 8, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		DWORD WINAPI receiveTimeout(LPVOID n)
+--						LPVOID n: void pointer to thread param
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check the difference between
+--  the current time and the time when the last data frame was received
+--------------------------------------------------------------------------------------*/
+DWORD WINAPI receiveTimeout(LPVOID n)
+{
+	VariableManager& vm = VariableManager::getInstance();
+	while (vm.get_curState() == "RECEIVE") {
+		time_t currentTime = time(0);
+		if (currentTime - vm.get_LAST_DATA() > RECEIVE_TIMEOUT_TIME_S)
+		{
+			goToIdle();
+		}
+		int difference = currentTime - vm.get_LAST_DATA();
+		std::stringstream message;
+		message << "Last data frame was " << difference << " seconds ago";
+		debugMessage(message.str());
+		Sleep(CHECK_IDLE_TIMEOUT_MS);
+	}
+	return 0;
+}

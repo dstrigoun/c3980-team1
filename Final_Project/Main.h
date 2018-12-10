@@ -8,6 +8,7 @@
 #include <mutex>
 #include <atomic>
 #include <vector>
+#include <sstream>
 #include "Menu.h"
 #include "FrameHandler.h"
 #include "EventHandler.h"
@@ -20,8 +21,8 @@
 static char Name[] = "GTID";
 static DWORD MAX_RANDOM_WAIT_TIME_MS = 500;
 static DWORD IDLE_TIMEOUT_TIME_S = 30;
+static DWORD RECEIVE_TIMEOUT_TIME_S = 10;
 static DWORD CHECK_IDLE_TIMEOUT_MS = 5000;
-static time_t LAST_EOT_RECEIVED = time(0);
 
 static bool unfinishedTransmission = false;
 static PWriteParams wp = new WriteParams(NULL, NULL);
@@ -46,5 +47,4 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 void sendCharacter(HWND hwnd);
 
-void updateLastEOTReceived(time_t receivedTime);
-
+void create_CTRL_frames();

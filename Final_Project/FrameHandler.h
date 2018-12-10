@@ -32,5 +32,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp);
 void generateDataFrame(char* dataFrame, const char* data);
 void generateCtrlFrame(char* ctrlFrame, char ctrl);
 
+DWORD WINAPI receiveTimeout(LPVOID n);
+
 //boost::uint16_t buildCRC(const char* data);
 //bool checkCRC(const char* data, boost::uint16_t receivedCRC);

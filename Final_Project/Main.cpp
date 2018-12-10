@@ -44,7 +44,6 @@
 #include <queue>
 using namespace std;
 
-//time_t LAST_EOT_RECEIVED;
 DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
 DWORD senderThreadId;
@@ -149,14 +148,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	SetCommMask(vm.get_portHandle(), EV_RXCHAR);
 
 	//start thread with checkIdleTimeout
+	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
 
-	char testEOTFrame[3];
-	generateCtrlFrame(testEOTFrame, EOT);
+	create_CTRL_frames();
+
+
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
+
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
@@ -254,17 +256,23 @@ void goToIdle()
 	}
 	vm.set_curState("IDLE");
 
+	debugMessage("Current State: " + vm.get_curState());
+	vm.set_ENQ_FLAG(false);
 
 	// check to see if there's data
 	// start all idle threads
 
-
+	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
-	char testEOTFrame[3];
-	generateCtrlFrame(testEOTFrame, EOT);
+	debugMessage("IDLE timeout created, starting to send EOTs");
+		
+	std::stringstream message;
+	message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
+	debugMessage(message.str());
+
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(testEOTFrame, frameLen);
+	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
 
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 }
@@ -369,12 +377,17 @@ int randomNumberGenerator(int min, int max)
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI checkIdleTimeout(LPVOID n)
 {
-	while (1) {
+	VariableManager& vm = VariableManager::getInstance();
+	while (vm.get_curState() == "IDLE") {
 		time_t currentTime = time(0);
-		if (currentTime - LAST_EOT_RECEIVED > IDLE_TIMEOUT_TIME_S) 
+		if (currentTime - vm.get_LAST_EOT() > IDLE_TIMEOUT_TIME_S) 
 		{
 			terminateProgram();
 		}
+		int difference = currentTime - vm.get_LAST_EOT();
+		std::stringstream message;
+		message << "Last EOT was " << difference << " seconds ago";
+		debugMessage(message.str());
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
 	}
 	return 0;
@@ -436,6 +449,10 @@ void sendCharacter(HWND hwnd) {
 	//ReleaseDC(hwnd, hdc); // Release device context
 }
 
-void updateLastEOTReceived(time_t receivedTime) {
-	LAST_EOT_RECEIVED = receivedTime;
+void create_CTRL_frames() {
+	VariableManager& vm = VariableManager::getInstance();
+	char tempFrame[3] = {};
+
+	generateCtrlFrame(tempFrame, EOT);
+	vm.set_EOT_frame(tempFrame);
 }

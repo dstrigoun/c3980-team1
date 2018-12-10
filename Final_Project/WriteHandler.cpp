@@ -55,14 +55,12 @@ DWORD WINAPI sendFrame(LPVOID writeParams)
 DWORD WINAPI sendEOTs(LPVOID writeParams)
 {
 	VariableManager &vm = VariableManager::getInstance();
-	DWORD dwWrite = NULL;
-	DWORD dwBytesWritten = 0;
 
-	PWriteParams wp;
-	wp = PWriteParams(writeParams);
+	PWriteParams write_params;
+	write_params = PWriteParams(writeParams);
 
 	do {
-		sendFrameToPort(wp->frame, wp->frameLen);
+		sendFrameToPort(write_params->frame, write_params->frameLen);
 
 		debugMessage("Send EOT");
 
