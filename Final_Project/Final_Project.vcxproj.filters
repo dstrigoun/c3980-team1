@@ -13,5 +13,89 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Application">
+      <UniqueIdentifier>{59f66eb3-0a03-40c0-9261-1feeb3cae550}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DataLink">
+      <UniqueIdentifier>{93893fff-4089-4e5d-9d8e-b58277871905}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Physical">
+      <UniqueIdentifier>{0353d29c-49ea-4237-941c-d95270f88ed6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Application">
+      <UniqueIdentifier>{5b620189-65a5-4adf-bd27-d2676fa9a506}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\DataLink">
+      <UniqueIdentifier>{2add8195-4de1-4526-8f34-d040b3440ffe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Physical">
+      <UniqueIdentifier>{3db092e8-c46a-4e3b-9fdd-6349489d7652}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Menu.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Menu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Main.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameHandler.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="Receiver.h">
+      <Filter>Header Files\Physical</Filter>
+    </ClInclude>
+    <ClInclude Include="Sender.h">
+      <Filter>Header Files\Physical</Filter>
+    </ClInclude>
+    <ClInclude Include="EventHandler.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="WriteHandler.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="FileChooser.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="ReadThreadParams.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="WriteParams.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
+    <ClInclude Include="VariableManager.h">
+      <Filter>Header Files\Application</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source Files\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameHandler.cpp">
+      <Filter>Source Files\DataLink</Filter>
+    </ClCompile>
+    <ClCompile Include="Receiver.cpp">
+      <Filter>Source Files\Physical</Filter>
+    </ClCompile>
+    <ClCompile Include="Sender.cpp">
+      <Filter>Source Files\Physical</Filter>
+    </ClCompile>
+    <ClCompile Include="EventHandler.cpp">
+      <Filter>Source Files\DataLink</Filter>
+    </ClCompile>
+    <ClCompile Include="WriteHandler.cpp">
+      <Filter>Source Files\DataLink</Filter>
+    </ClCompile>
+    <ClCompile Include="FileChooser.cpp">
+      <Filter>Source Files\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="VariableManager.cpp">
+      <Filter>Source Files\Application</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
