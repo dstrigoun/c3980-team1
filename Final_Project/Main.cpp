@@ -259,6 +259,10 @@ void goToIdle()
 	vm.set_ENQ_FLAG(false);
 
 	// check to see if there's data
+	if (vm.get_unfinishedTransmission()) {
+		generateFrame(NULL, ENQ, wp);
+		vm.set_ENQ_FLAG(true);
+	}
 	// start all idle threads
 
 	vm.set_LAST_EOT(time(0));

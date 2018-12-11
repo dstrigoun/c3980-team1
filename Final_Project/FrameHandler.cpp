@@ -192,7 +192,8 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 			if (data[i] == -1) {
 
 				debugMessage("Reached EOF in data");
-				unfinishedTransmission = false;
+				VariableManager& vm = VariableManager::getInstance();
+				vm.set_unfinishedTransmission(false);
 				data_size = i;
 				break;
 			}
@@ -266,7 +267,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
-			unfinishedTransmission = true;
+			vm.set_unfinishedTransmission(true);
 
 			//send the first data frame
 			
