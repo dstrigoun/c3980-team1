@@ -11,8 +11,8 @@
 --
 --	PROGRAMMER:		Jason Kim
 --
---	INTERFACE:		DWORD WINAPI pollForEvents(LPVOID portHandle)
---						LPVOID portHandle: the handle to monitor for incoming frames
+--	INTERFACE:		DWORD WINAPI pollForEvents(LPVOID n)
+--						LPVOID n - the handle to monitor for incoming frames
 --
 --	RETURNS:		returns 0 when infinite loop to poll for received characters exits
 --
@@ -26,8 +26,8 @@ DWORD WINAPI pollForEvents(LPVOID n)
 	VariableManager &vm = VariableManager::getInstance();
 	PREADTHREADPARAMS readTP;
 	readTP = PREADTHREADPARAMS(n);
-	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
-	SetCommTimeouts(vm.get_portHandle(), &timeouts);
+//	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
+//	SetCommTimeouts(vm.get_portHandle(), &timeouts);
 	DWORD waitResult;
 
 	while (1) {

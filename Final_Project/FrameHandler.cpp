@@ -1,5 +1,9 @@
 #include "FrameHandler.h"
 #include "ReadThreadParams.h"
+#include "fileChooser.h"
+
+DWORD timeoutThreadId;
+HANDLE hTimeoutThrd;
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
@@ -13,23 +17,41 @@
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void receiveFrame(const char* frame)
+--	INTERFACE:		void receiveFrame(const char* frame, PREADTHREADPARAMS rtp)
 --						const char* frame - frame received
+--						PREADTHREADPARAMS rtp - struct with stopThreadEvent and number of
+--							Bytes to be read
 --
 --	RETURNS:		void
 --
 --	NOTES:
---	
+--	Call this generic function to receive a frame that was sent. Type will be determined
+--		here, control or data.
 --------------------------------------------------------------------------------------*/
 void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
-
+	VariableManager &vm = VariableManager::getInstance();
+	if (vm.get_countDataFrameBytesRead() > 0
+		&& !(frame[1] == DC1 || frame[1] == DC2)) {
+		vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+		readDataFrame(frame, *(rtp->numBytesRead), false);
+		if (vm.get_countDataFrameBytesRead() == 1024) {
+			vm.set_countDataFrameBytesRead(0);
+			generateAndSendFrame(ACK, wp);
+			debugMessage("Received entire frame, Sending ACK");
+		}
+	}
 	// check type of frame
 	if (frame[0] == SYN) {
-		//MessageBox(*(rtp->hwnd), "SYN\n", "SYN\n", MB_OK);
-
 		if (frame[1] == DC1 || frame[1] == DC2) {
 			//data frame
-			readDataFrame(frame);
+			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+			readDataFrame(frame, *(rtp->numBytesRead), true);
+			if (vm.get_countDataFrameBytesRead() == 1024) {
+				vm.set_countDataFrameBytesRead(0);
+				generateAndSendFrame(ACK, wp);
+				debugMessage("Received entire frame, Sending ACK");
+			}
 		}
 		else {
 			//ctrl frame
@@ -42,38 +64,55 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 }
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	sendFrame
+--	FUNCTION:	generateFrame
 --
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
---						November 30, 2018 - changed ctrl to be char
+--					November 30, 2018 - changed ctrl to be char
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void sendFrame(char* frame, const char* data, char ctrl)
---						char* frame - the frame to populate
+--	INTERFACE:		void generateFrame(const char* data, char ctrl, PWriteParams wp)
 --						const char* data - data to send
 --						char ctrl - control character to send
+--						PWriteParams wp - struct with frame to be written
 --
 --	RETURNS:		void
 --
 --	NOTES:
---	Call this generic send method and send a frame based on parameters provided.
+--	Call this generic send function to generate a frame to be sent, control or data
 --------------------------------------------------------------------------------------*/
-void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
-	char localFrame[3] = {};
-	(ctrl != NULL) ? generateCtrlFrame(localFrame, ctrl)
-		: generateDataFrame(frame, data);
+void generateAndSendFrame(char ctrl, PWriteParams wp) {
 
+
+	VariableManager &vm = VariableManager::getInstance();
+	
+	char localCtlFrame[3] = {};
+	char localDataFrame[1024] = {};
+	(ctrl != NULL) ? generateCtrlFrame(localCtlFrame, ctrl)
+		: generateDataFrame(localDataFrame);
+	
 	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
-	//copy in frame info to wp char azrr
-	for (int i = 0; i < wp->frameLen; i++) {
-		wp->frame[i] = localFrame[i];
+	
+	if (ctrl != NULL) {
+		for (int i = 0; i < wp->frameLen; i++) {
+			wp->frame[i] = localCtlFrame[i];
+		}
 	}
+	else {
+		for (int i = 0; i < wp->frameLen; i++) {
+			wp->frame[i] = localDataFrame[i];
+		}
+	}
+	
+	
 	sendFrame(wp);
+	
+	//start sender thread here with the above created frame
+
 }
 
 /*-------------------------------------------------------------------------------------
@@ -91,22 +130,25 @@ void generateFrame(char* frame, const char* data, char ctrl, PWriteParams wp) {
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void readDataFrame(const char* frame) 
+--	INTERFACE:		void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) 
 --						const char* frame - data frame to read
+--						DWORD numBytesRead - number of Bytes to be read
 --
 --	RETURNS:		void
 --
 --	NOTES:
 --	Call this to read a data frame and handle the data retrieved from the frame
 --------------------------------------------------------------------------------------*/
-void readDataFrame(const char* frame) {
-	if (frame[1] != nextFrameToReceive) {
+void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
+	std::ofstream log_file;
+
+	if (false /*frame[1] != nextFrameToReceive*/) { //tempeoaraliy made this always fail
 		//duplicate frame 
 	}
 	else {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
 		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
-
+		debugMessage("Next Frame to Receive: " + nextFrameToReceive);
 		//check for dummy CRC bit
 		if (frame[1023] == 1) {
 			debugMessage("CRC bit is correct");
@@ -127,28 +169,53 @@ void readDataFrame(const char* frame) {
 		//-----------------------------------------------------
 
 		char data[1021] = {};
-		for (int i = 0; i < 1021; i++) {
-			data[i] = frame[2 + i];
+
+		if (firstPartOfFrame) {
+			for (int i = 0; i < 1021; i++) {
+				data[i] = frame[2 + i];
+			}
 		}
+		else {
+			for (int i = 0; i < 1021; i++) {
+				data[i] = frame[i];
+			}
+		}
+		
+		
 
 		// Check for EOF (-1) in the data
-		int data_size = sizeof(data) / sizeof(*data);
-
+		//int data_size = sizeof(data) / sizeof(*data);
+		int data_size = 0;
+		if (firstPartOfFrame) {
+			data_size = numBytesRead -2;
+		}
+		else {
+			data_size = numBytesRead;
+		}
+		
 		for (int i = 0; i < data_size; ++i) {
-			if (data[i] == -1) {
-				debugMessage("Reached EOF in data");
+			log_file.open("log.txt", std::fstream::app);
+			log_file << data[i];
+			log_file.close();
 
+			if (data[i] == -1) {
+
+				debugMessage("Reached EOF in data");
 				unfinishedTransmission = false;
 				data_size = i;
+				break;
 			}
 		}
 
 		std::ofstream file;
-		file.open("test.txt", std::fstream::app);
+		file.open("receive_data.txt", std::fstream::app);
 		for (int i = 0; i < data_size; i++) {
 			file << data[i];
 		}
 		file.close();
+
+		VariableManager &vm = VariableManager::getInstance();
+		vm.set_LAST_DATA(time(0));
 	}
 }
 
@@ -166,8 +233,9 @@ void readDataFrame(const char* frame) {
 --
 --	PROGRAMMER:		Jason Kim, Alexander Song, Dasha Strigoun
 --
---	INTERFACE:		void readCtrlFrame(const char* frame)
+--	INTERFACE:		void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp)
 --						const char* frame - control frame to read
+--						PREADTHREADPARMS rtp - read thread being used
 --
 --	RETURNS:		void
 --
@@ -181,17 +249,17 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char dcChar = frame[2];
 	char CurrentSendingCharArrKieran[1024] = {};
 	wp->frame = CurrentSendingCharArrKieran;
-	wp->portHandle = vm.get_portHandle();
 
 	debugMessage("Current State: " + vm.get_curState());
-	debugMessage("ENQ_FLAG: " + (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE");
+	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
+	debugMessage("ENQ_FLAG: " + tempENQ);
 
 	// handle behaviour based on control char received
 
 	if (vm.get_curState() == "IDLE") {
 
 		if (ctrlChar == EOT) {
-			updateLastEOTReceived(time(0));
+			vm.set_LAST_EOT(time(0));
 			debugMessage("Received EOT");
 		}
 
@@ -199,45 +267,70 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			debugMessage("Received ENQ & sending ACK");
 
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
-			generateFrame(ctrlFrame, nullptr, ACK, wp);
+			generateAndSendFrame( ACK, wp);
 
 			vm.set_curState("RECEIVE");
-
 			debugMessage("curState is now RECEIVE");
+
+			// start receive timeout thread
+			vm.set_LAST_DATA(time(0));
+			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
 			unfinishedTransmission = true;
 
-			debugMessage("ENQ was approved, go to SEND state");
-		}
-	}
-	else if (vm.get_curState() == "RECEIVE")
-	{
-		if (ctrlChar == EOT) 
-		{
-			goToIdle();
+			//send the first data frame
+			
+			debugMessage("Sending payload");
+			generateAndSendFrame(NULL, wp);
+			
 		}
 	}
 	else if (vm.get_curState() == "SEND")
 	{
 		switch (ctrlChar)
 		{
+		case EOT:
+			goToIdle();
 		case ACK:
 			//update DC1/DC2
 			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
 			//trigger send frame
-			sendDataFrame(wp);
+			debugMessage("Received ACK for Data Frame" + nextFrameToSend);
+			generateAndSendFrame(NULL, wp);
 			break;
 		case NAK:
 			//trigger resend frame
-			resendDataFrame(wp);
+			debugMessage("Received NAK for Data Frame. Triggering Resend");
+			//resendDataFrame(wp);
 			break;
 		}
 	}
-	else if (vm.get_curState() == "RECEIVE")
-	{
+	else if (vm.get_curState() == "RECEIVE") {
+		/*if (ctrlChar == DC1 || ctrlChar == DC2) {
+			bool lastDataFrame = false;
+			std::ofstream file;
+			file.open("log.txt", std::fstream::app);
+			file << time(0) << ": \t Data content: ";
+			for (int i = 2; i < 1022; i++) {
+				if (frame[i] == EOF) {
+					lastDataFrame = true;
+					break;
+				}
+				file << frame[i];
+				
+			}
+			file << std::endl;
+			file.close();
 
+			generateAndSendFrame( ACK, wp);
+
+		}*/
+		if (ctrlChar == EOT)
+		{
+			goToIdle();
+		}
 	}
 }
 
@@ -266,10 +359,16 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --	DATA FRAME MAKEUP
 --	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
-void generateDataFrame(char* dataFrame, const char* data) {
+void generateDataFrame(char* dataFrame) {
 	// use local data frame to append data
+
+	VariableManager &vm = VariableManager::getInstance();
+
+	//vm.set_lastFrameSent(getPayload());
+
 	char localData[1024] = {};
 	*localData = *dataFrame;
+	char* data = (char*)getPayload();
 
 	localData[0] = SYN;
 	localData[1] = nextFrameToSend;
@@ -302,6 +401,7 @@ void generateDataFrame(char* dataFrame, const char* data) {
 	//strcat_s(dataFrame, 1021, msgbuf);
 	//-------------------------------------------------------
 
+	//should set lastFrameSent here 
 
 	nextFrameToSend = (nextFrameToSend == DC1) ? DC2 : DC1;
 }
@@ -333,6 +433,10 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
 	ctrlFrame[2] = nextFrameToSend;
+
+	std::stringstream message;
+	message << "Generate CTRL frame: " << (LPSTR)ctrlFrame << std::endl;
+	debugMessage(message.str());
 }
 
 /*-------------------------------------------------------------------------------------
@@ -399,3 +503,42 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 //
 //	return result.checksum() == receivedCRC;
 //}
+
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	receiveTimeout
+--
+--	DATE:			December 8, 2018
+--
+--	REVISIONS:		December 8, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Dasha Strigoun
+--
+--	INTERFACE:		DWORD WINAPI receiveTimeout(LPVOID n)
+--						LPVOID n: void pointer to thread param
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check the difference between
+--  the current time and the time when the last data frame was received
+--------------------------------------------------------------------------------------*/
+DWORD WINAPI receiveTimeout(LPVOID n)
+{
+	VariableManager& vm = VariableManager::getInstance();
+	while (vm.get_curState() == "RECEIVE") {
+		time_t currentTime = time(0);
+		if (currentTime - vm.get_LAST_DATA() > RECEIVE_TIMEOUT_TIME_S)
+		{
+			goToIdle();
+		}
+		int difference = currentTime - vm.get_LAST_DATA();
+		std::stringstream message;
+		message << "Last data frame was " << difference << " seconds ago";
+		debugMessage(message.str());
+		Sleep(CHECK_IDLE_TIMEOUT_MS);
+	}
+	return 0;
+}

@@ -12,7 +12,9 @@
 --
 --	PROGRAMMER:		Jason Kim
 --
---	INTERFACE:		void readFromPort(LPVOID portHandle)
+--	INTERFACE:		void ReadFromPort(PREADTHREADPARAMS readTP)
+--						PREADTHREADPARAMS readTP - contains event thread and number of 
+--							Bytes to be read
 --
 --	RETURNS:		void
 --
@@ -23,11 +25,13 @@
 void readFromPort(PREADTHREADPARAMS readTP) {
 	VariableManager &vm = VariableManager::getInstance();
 	char readStr[1024];
+
 	if (!ReadFile(vm.get_portHandle(), readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
 		debugMessage("Read file failed");
 	}
 	else {
 		if (*(readTP->numBytesRead) > 0) {
+			debugMessage("NumBytesRead: " + *(readTP->numBytesRead));
 			receiveFrame(readStr, readTP);
 		}
 	}

@@ -19,9 +19,11 @@
 #include <vector>
 #include <string>
 
+#include "VariableManager.h"
+
 using namespace std;
 const int NUM_PAYLOAD_BYTES = 1021;
 
 ifstream openFile(HWND *hWnd);
-char* getPayload(ifstream* currFile);
+char* getPayload();
 

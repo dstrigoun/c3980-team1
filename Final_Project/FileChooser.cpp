@@ -1,4 +1,5 @@
 #include "FileChooser.h"
+#include "FrameHandler.h"
 
 #define INDEX_TEXTDOC 3
 
@@ -105,13 +106,26 @@ std::ifstream openFile(HWND *hWnd)
 	return hFile;
 }
 
-char* getPayload(ifstream* currFile) { //todo free char* pointer later?
+char* getPayload() { //todo free char* pointer later?
+
+	VariableManager &vm = VariableManager::getInstance();
+	ifstream* currFile = vm.get_currUploadFile();
+
+	std::ofstream file;
+	file.open("log.txt", std::fstream::app);
+	//file << time(0) << ": \tinGetpAYLOAD, before loop\n";
+	file.close();
 	char* payload = new char[NUM_PAYLOAD_BYTES + 1];
 	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
-		payload[i] = '\0';
+		payload[i] = DC4;
 	}
 	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
 		payload[i] = currFile->get();
+
+		std::ofstream file;
+		file.open("log.txt", std::fstream::app);
+		//file << time(0) << ": \tinGetpAYLOAD loop, i = " << i << " data: " << payload[i] << std::endl;
+		file.close();
 		
 		if (currFile->eof()) {
 			payload[i] = EOF;

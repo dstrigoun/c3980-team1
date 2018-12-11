@@ -6,17 +6,9 @@
 #include "Main.h"
 #include "Sender.h"
 #include "FileChooser.h"
+#include "VariableManager.h"
 
 using namespace std;
-
-static ifstream* PcurrUploadFile;
-static LPCSTR lastFrameSent;
-
-static int MAX_RESENDS = 5;
-static int MAX_FRAMES_SENT = 50;
-
-
-void initWriteHandler(ifstream* file);
 
 void sendCtrlFrame(LPVOID writeParams);
 

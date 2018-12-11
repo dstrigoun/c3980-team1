@@ -1,10 +1,5 @@
 #include "WriteHandler.h"
 
-void initWriteHandler(ifstream* file)  
-{
-	PcurrUploadFile = file;
-};
-
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	sendFrame
 --
@@ -26,20 +21,22 @@ void initWriteHandler(ifstream* file)
 --------------------------------------------------------------------------------------*/
 void sendFrame(LPVOID writeParams)
 {
+
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 	
 	(wp->frameLen == 3) ? sendCtrlFrame(writeParams) : sendDataFrame(writeParams);
 	
 	//sendFrameToPort(wp->portHandle,wp->frame, wp->frameLen);
-
 }
 
 void sendCtrlFrame(LPVOID writeParams) 
 {
+	VariableManager &vm = VariableManager::getInstance();
+
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
-	sendFrameToPort(wp->portHandle, wp->frame, wp->frameLen);
+	sendFrameToPort( wp->frame, wp->frameLen);
 
 	debugMessage("CtrlFrame Sent Successfully");
 }
@@ -50,13 +47,11 @@ void sendDataFrame(LPVOID writeParams)
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 
-	if (vm.get_numFramesSent() < MAX_FRAMES_SENT) {
-		lastFrameSent = getPayload(PcurrUploadFile);
-		sendFrameToPort(wp->portHandle, (char*)lastFrameSent, wp->frameLen);
+	if (!vm.isMaxFramesSent()) {
+		sendFrameToPort( wp->frame, wp->frameLen);
 		vm.increment_numFramesSent();
 
 		debugMessage("DataFrame Sent Successfully");
-		//debugMessage(lastFrameSent);
 		debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
 	}
 	else {
@@ -64,7 +59,6 @@ void sendDataFrame(LPVOID writeParams)
 		// send eot
 		goToIdle();
 	}
-	
 }
 
 void resendDataFrame(LPVOID writeParams)
@@ -72,8 +66,8 @@ void resendDataFrame(LPVOID writeParams)
 	VariableManager &vm = VariableManager::getInstance();
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
-	if (vm.get_numFramesReSent() < MAX_RESENDS) {
-		sendFrameToPort(wp->portHandle, (char*)lastFrameSent, 1024);
+	if (vm.isMaxResends()) {
+		sendFrameToPort( (char*)vm.get_lastFrameSent(), 1024);
 		vm.increment_numFramesReSent();
 
 		debugMessage("Received NAK for DataFrame");
@@ -110,14 +104,12 @@ DWORD WINAPI sendEOTs(LPVOID writeParams)
 {
 
 	VariableManager &vm = VariableManager::getInstance();
-	DWORD dwWrite = NULL;
-	DWORD dwBytesWritten = 0;
 
-	PWriteParams wp;
-	wp = PWriteParams(writeParams);
+	PWriteParams write_params;
+	write_params = PWriteParams(writeParams);
 
 	do {
-		sendFrameToPort(wp->portHandle, wp->frame, wp->frameLen);
+		sendFrameToPort(write_params->frame, write_params->frameLen);
 
 		debugMessage("Send EOT");
 
