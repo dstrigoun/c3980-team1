@@ -213,7 +213,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				vm.set_unfinishedTransmission(true);
 				vm.set_ENQ_FLAG(true);
 
-<<<<<<< HEAD
 				generateAndSendFrame(ENQ, wp);
 				vm.reset_numFramesSent();
 				vm.reset_numFramesReSent();
@@ -221,18 +220,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
 
 			}
-=======
-			
-			//generateAndSendFrame(ENQ, wp);
-			wp->frame = vm.get_ENQ_frame();
-			wp->frameLen = 3;
-			sendFrame(wp);
 
-			vm.reset_numFramesSent();
-			vm.reset_numFramesReSent();
-			
-			PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
->>>>>>> dstrigoun_unfinishedTransmission
 
 			break;
 		}

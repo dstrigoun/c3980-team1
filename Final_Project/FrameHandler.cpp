@@ -283,7 +283,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			goToIdle();
 		case ACK:
 			if (vm.get_currUploadFile() == nullptr) {
-				vm.set_unfinishedTransmission(true);
+				vm.set_unfinishedTransmission(false);
 				goToIdle();
 				break;
 			}
