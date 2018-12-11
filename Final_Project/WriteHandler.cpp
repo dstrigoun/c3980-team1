@@ -19,17 +19,63 @@
 --	NOTES:
 --	Pass this thread function to Sender thread to send out a frame
 --------------------------------------------------------------------------------------*/
-DWORD WINAPI sendFrame(LPVOID writeParams)
+void sendFrame(LPVOID writeParams)
 {
-	DWORD dwWrite = NULL;
-	DWORD dwBytesWritten = 0;
-
-	PWriteParams write_params;
-	write_params = PWriteParams(writeParams);
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
 	
-	sendFrameToPort(write_params->frame, write_params->frameLen);
+	(wp->frameLen == 3) ? sendCtrlFrame(writeParams) : sendDataFrame(writeParams);
 
-	return 0;
+}
+
+void sendCtrlFrame(LPVOID writeParams) 
+{
+	VariableManager &vm = VariableManager::getInstance();
+
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
+	sendFrameToPort( wp->frame, wp->frameLen);
+
+	debugMessage("CtrlFrame Sent Successfully");
+}
+
+void sendDataFrame(LPVOID writeParams)
+{
+	VariableManager &vm = VariableManager::getInstance();
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
+
+	if (!vm.isMaxFramesSent()) {
+		sendFrameToPort( wp->frame, wp->frameLen);
+		vm.increment_numFramesSent();
+
+		debugMessage("DataFrame Sent Successfully");
+		debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
+	}
+	else {
+		// end transmission
+		// send eot
+		goToIdle();
+	}
+}
+
+void resendDataFrame(LPVOID writeParams)
+{
+	VariableManager &vm = VariableManager::getInstance();
+	PWriteParams wp;
+	wp = PWriteParams(writeParams);
+	if (vm.isMaxResends()) {
+		sendFrameToPort( (char*)vm.get_lastFrameSent(), 1024);
+		vm.increment_numFramesReSent();
+
+		debugMessage("Received NAK for DataFrame");
+		debugMessage("Number of resends: " + to_string(vm.get_numFramesReSent()));
+	}
+	else {
+		// end transmission
+		// send eot
+		goToIdle();
+	}
 }
 
 /*-------------------------------------------------------------------------------------
@@ -53,6 +99,7 @@ DWORD WINAPI sendFrame(LPVOID writeParams)
 --------------------------------------------------------------------------------------*/
 DWORD WINAPI sendEOTs(LPVOID writeParams)
 {
+
 	VariableManager &vm = VariableManager::getInstance();
 
 	PWriteParams write_params;

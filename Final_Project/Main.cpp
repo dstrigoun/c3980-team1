@@ -42,6 +42,7 @@
 #include <atlbase.h>
 #include <AtlConv.h>
 #include <queue>
+
 using namespace std;
 
 DWORD idleTimeoutThreadId;
@@ -146,7 +147,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	cc.wVersion = 0x100;
 
 	SetCommMask(vm.get_portHandle(), EV_RXCHAR);
-
+	debugMessage("Starting Connection");
 	//start thread with checkIdleTimeout
 	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
@@ -205,9 +206,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
 			vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
 
-			wp->frame = vm.get_ENQ_frame();
-			wp->frameLen = 3;
-			sendFrame(wp);
+			wp->frame = CurrentSendingCharArrKieran;
+			
+			generateAndSendFrame(ENQ, wp);
+			vm.reset_numFramesSent();
+			vm.reset_numFramesReSent();
+			
+			PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
+
 			vm.set_ENQ_FLAG(true);
 			
 			break;
@@ -215,6 +221,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		break;
 
 	case WM_DESTROY:	// Terminate program
+		debugMessage("Connected Terminated");
 		SetEvent(stopThreadEvent);
 		CloseHandle(hIdleTimeoutThrd);
 		CloseHandle(eventHandlerThrd);
@@ -420,7 +427,7 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 void terminateProgram() 
 {
 	MessageBox(NULL, "Lost connection.", "", MB_OK);
-
+	debugMessage("Lost Connection");
 	SetEvent(stopThreadEvent);
 	CloseHandle(hIdleTimeoutThrd);
 	CloseHandle(eventHandlerThrd);

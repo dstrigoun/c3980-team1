@@ -41,6 +41,14 @@ public:
 	void set_curState(std::string curState) { this->curState = curState; }
 	std::string get_curState() { return this->curState; }
 
+	void reset_numFramesSent() { this->numFramesSent = 0; }
+	void increment_numFramesSent() { this->numFramesSent++; }
+	int get_numFramesSent() { return this->numFramesSent; }
+
+	void reset_numFramesReSent() { this->numFramesReSent = 0; }
+	void increment_numFramesReSent() { this->numFramesReSent++; }
+	int get_numFramesReSent() { return this->numFramesReSent; }
+
 	void set_LAST_EOT(time_t current) { this->LAST_EOT_RECEIVED = current; }
 	DWORD get_LAST_EOT() { return this->LAST_EOT_RECEIVED; }
 
@@ -70,6 +78,18 @@ public:
 	}
 	int get_countDataFrameBytesRead() { return countDataFrameBytesRead; }
 
+	void set_lastFrameSent(LPCSTR lastFrame) {
+		this->lastFrameSent = lastFrame;
+	}
+	LPCSTR get_lastFrameSent(){ return this->lastFrameSent; }
+
+	bool isMaxFramesSent() {
+		return this->numFramesSent >= MAX_FRAMES_SENT;
+	}
+	bool isMaxResends() {
+		return this->numFramesReSent >= MAX_RESENDS;
+	}
+
 private:
 	VariableManager() {}
 
@@ -78,8 +98,13 @@ private:
 	HWND hwnd;
 	HANDLE portHandle;
 	std::string curState;
+	int numFramesSent;
+	int numFramesReSent;
 	DWORD LAST_EOT_RECEIVED;
 	DWORD LAST_DATA_FRAME_RECEIVED;
+	LPCSTR lastFrameSent;
+	const int MAX_RESENDS = 3;
+	const int MAX_FRAMES_SENT = 10;
 
 	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
 	int countDataFrameBytesRead;

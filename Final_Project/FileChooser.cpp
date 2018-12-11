@@ -113,7 +113,7 @@ char* getPayload() { //todo free char* pointer later?
 
 	std::ofstream file;
 	file.open("log.txt", std::fstream::app);
-	file << time(0) << ": \tinGetpAYLOAD, before loop\n";
+	//file << time(0) << ": \tinGetpAYLOAD, before loop\n";
 	file.close();
 	char* payload = new char[NUM_PAYLOAD_BYTES + 1];
 	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
@@ -124,7 +124,7 @@ char* getPayload() { //todo free char* pointer later?
 
 		std::ofstream file;
 		file.open("log.txt", std::fstream::app);
-		file << time(0) << ": \tinGetpAYLOAD loop, i = " << i << " data: " << payload[i] << std::endl;
+		//file << time(0) << ": \tinGetpAYLOAD loop, i = " << i << " data: " << payload[i] << std::endl;
 		file.close();
 		
 		if (currFile->eof()) {
