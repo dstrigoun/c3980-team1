@@ -282,6 +282,11 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		case EOT:
 			goToIdle();
 		case ACK:
+			if (vm.get_currUploadFile() == nullptr) {
+				vm.set_unfinishedTransmission(true);
+				goToIdle();
+				break;
+			}
 			//update DC1/DC2
 			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
 			//trigger send frame

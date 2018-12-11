@@ -109,6 +109,9 @@ std::ifstream openFile(HWND *hWnd)
 char* getPayload() { //todo free char* pointer later?
 
 	VariableManager &vm = VariableManager::getInstance();
+	if (vm.get_currUploadFile() == nullptr) {
+		return nullptr;
+	}
 	ifstream* currFile = vm.get_currUploadFile();
 
 	std::ofstream file;
@@ -129,7 +132,9 @@ char* getPayload() { //todo free char* pointer later?
 		
 		if (currFile->eof()) {
 			payload[i] = EOF;
-			OutputDebugString("eofbit true");
+			debugMessage("HIT EOF");
+			vm.get_currUploadFile()->close();
+			vm.set_currUploadFile(nullptr);
 			break;
 		}
 		if (currFile->fail()) {

@@ -201,21 +201,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		{
 		case IDM_UPLOAD:
 			debugMessage("Clicked upload");
+			if (vm.get_unfinishedTransmission()) {
+				MessageBox(hwnd, "file currenrtly uploading, please try again later", "sorry", MB_OK);
+			}
+			else {
+				ifstream* kieransTempButNotReallyTempUploadFile = new ifstream;
+				*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
+				vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
 
-			ifstream* kieransTempButNotReallyTempUploadFile = new ifstream;
-			*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
-			vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
+				wp->frame = CurrentSendingCharArrKieran;
+				vm.set_unfinishedTransmission(true);
+				vm.set_ENQ_FLAG(true);
 
-			wp->frame = CurrentSendingCharArrKieran;
-			
-			generateAndSendFrame(ENQ, wp);
-			vm.reset_numFramesSent();
-			vm.reset_numFramesReSent();
-			
-			PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
+				generateAndSendFrame(ENQ, wp);
+				vm.reset_numFramesSent();
+				vm.reset_numFramesReSent();
 
-			vm.set_ENQ_FLAG(true);
-			
+				PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
+
+			}
+
 			break;
 		}
 		break;
