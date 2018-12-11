@@ -12,7 +12,9 @@
 --
 --	PROGRAMMER:		Jason Kim
 --
---	INTERFACE:		void ReadFromPort(LPVOID portHandle)
+--	INTERFACE:		void ReadFromPort(PREADTHREADPARAMS readTP)
+--						PREADTHREADPARAMS readTP - contains event thread and number of 
+--							Bytes to be read
 --
 --	RETURNS:		void
 --

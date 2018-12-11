@@ -17,13 +17,16 @@ HANDLE hTimeoutThrd;
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void receiveFrame(const char* frame)
+--	INTERFACE:		void receiveFrame(const char* frame, PREADTHREADPARAMS rtp)
 --						const char* frame - frame received
+--						PREADTHREADPARAMS rtp - struct with stopThreadEvent and number of
+--							Bytes to be read
 --
 --	RETURNS:		void
 --
 --	NOTES:
---	
+--	Call this generic function to receive a frame that was sent. Type will be determined
+--		here, control or data.
 --------------------------------------------------------------------------------------*/
 void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	VariableManager &vm = VariableManager::getInstance();
@@ -56,26 +59,26 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 }
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	sendFrame
+--	FUNCTION:	generateFrame
 --
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
---						November 30, 2018 - changed ctrl to be char
+--					November 30, 2018 - changed ctrl to be char
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void sendFrame(char* frame, const char* data, char ctrl)
---						char* frame - the frame to populate
+--	INTERFACE:		void generateFrame(const char* data, char ctrl, PWriteParams wp)
 --						const char* data - data to send
 --						char ctrl - control character to send
+--						PWriteParams wp - struct with frame to be written
 --
 --	RETURNS:		void
 --
 --	NOTES:
---	Call this generic send method and send a frame based on parameters provided.
+--	Call this generic send function to generate a frame to be sent, control or data
 --------------------------------------------------------------------------------------*/
 void generateFrame(const char* data, char ctrl, PWriteParams wp) {
 	char localCtlFrame[3] = {};
@@ -118,8 +121,9 @@ void generateFrame(const char* data, char ctrl, PWriteParams wp) {
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void readDataFrame(const char* frame) 
+--	INTERFACE:		void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) 
 --						const char* frame - data frame to read
+--						DWORD numBytesRead - number of Bytes to be read
 --
 --	RETURNS:		void
 --
@@ -220,8 +224,9 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 --
 --	PROGRAMMER:		Jason Kim, Alexander Song, Dasha Strigoun
 --
---	INTERFACE:		void readCtrlFrame(const char* frame)
+--	INTERFACE:		void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp)
 --						const char* frame - control frame to read
+--						PREADTHREADPARMS rtp - read thread being used
 --
 --	RETURNS:		void
 --
