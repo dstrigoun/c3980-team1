@@ -213,6 +213,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				vm.set_unfinishedTransmission(true);
 				vm.set_ENQ_FLAG(true);
 
+<<<<<<< HEAD
 				generateAndSendFrame(ENQ, wp);
 				vm.reset_numFramesSent();
 				vm.reset_numFramesReSent();
@@ -220,6 +221,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
 
 			}
+=======
+			
+			//generateAndSendFrame(ENQ, wp);
+			wp->frame = vm.get_ENQ_frame();
+			wp->frameLen = 3;
+			sendFrame(wp);
+
+			vm.reset_numFramesSent();
+			vm.reset_numFramesReSent();
+			
+			PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
+>>>>>>> dstrigoun_unfinishedTransmission
 
 			break;
 		}
@@ -279,6 +292,8 @@ void goToIdle()
 		vm.set_ENQ_FLAG(true);
 	}
 	else {
+		triggerRandomWait();
+
 		vm.set_LAST_EOT(time(0));
 		hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
@@ -469,11 +484,11 @@ void sendCharacter(HWND hwnd) {
 
 void create_CTRL_frames() {
 	VariableManager& vm = VariableManager::getInstance();
-	char tempFrame[3] = {};
+	char tempEOTFrame[3] = {};
+	generateCtrlFrame(tempEOTFrame, EOT);
+	vm.set_EOT_frame(tempEOTFrame);
 
-	generateCtrlFrame(tempFrame, EOT);
-	vm.set_EOT_frame(tempFrame);
-
-	generateCtrlFrame(tempFrame, ENQ);
-	vm.set_ENQ_frame(tempFrame);
+	char tempENQFrame[3] = {};
+	generateCtrlFrame(tempENQFrame, ENQ);
+	vm.set_ENQ_frame(tempENQFrame);
 }
