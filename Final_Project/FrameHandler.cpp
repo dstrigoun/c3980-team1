@@ -32,7 +32,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	VariableManager &vm = VariableManager::getInstance();
 	if (vm.get_countDataFrameBytesRead() > 0
 		&& !(frame[1] == DC1 || frame[1] == DC2)) {
-		vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+		vm.set_countDataFrameBytesRead((int)(vm.get_countDataFrameBytesRead() + *(rtp->numBytesRead)));
 		readDataFrame(frame, *(rtp->numBytesRead), false);
 		if (vm.get_countDataFrameBytesRead() == 1024) {
 			vm.set_countDataFrameBytesRead(0);
@@ -42,15 +42,14 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	}
 	// check type of frame
 	if (frame[0] == SYN) {
-		if (frame[1] == DC1 || frame[1] == DC2) {
+		if (vm.get_curState()!="IDLE" && (frame[1] == DC1 || frame[1] == DC2)) {
 			//data frame
-			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
-			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+			vm.set_countDataFrameBytesRead((int)(vm.get_countDataFrameBytesRead() + *(rtp->numBytesRead)));
 			readDataFrame(frame, *(rtp->numBytesRead), true);
 			if (vm.get_countDataFrameBytesRead() == 1024) {
 				vm.set_countDataFrameBytesRead(0);
 				generateAndSendFrame(ACK, wp);
-				debugMessage("Received entire frame, Sending ACK");
+				//debugMessage("Received entire frame, Sending ACK");
 			}
 		}
 		else {
@@ -61,6 +60,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	else {
 		debugMessage("Frame Corrupt, 1st Byte not SYN");
 	}
+	debugMessage("" + vm.get_countDataFrameBytesRead());
 }
 
 /*-------------------------------------------------------------------------------------
@@ -108,7 +108,6 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 		}
 	}
 	
-	
 	sendFrame(wp);
 	
 	//start sender thread here with the above created frame
@@ -140,8 +139,6 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 --	Call this to read a data frame and handle the data retrieved from the frame
 --------------------------------------------------------------------------------------*/
 void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
-	std::ofstream log_file;
-
 	if (false /*frame[1] != nextFrameToReceive*/) { //tempeoaraliy made this always fail
 		//duplicate frame 
 	}
@@ -181,8 +178,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 			}
 		}
 		
-		
-
 		// Check for EOF (-1) in the data
 		//int data_size = sizeof(data) / sizeof(*data);
 		int data_size = 0;
@@ -192,28 +187,20 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 		else {
 			data_size = numBytesRead;
 		}
-		
-		for (int i = 0; i < data_size; ++i) {
-			log_file.open("log.txt", std::fstream::app);
-			log_file << data[i];
-			log_file.close();
 
+		std::ofstream file;
+		file.open("receive_data.txt", std::fstream::app);
+		for (int i = 0; i < data_size; i++) {
+			file << data[i];
+			//log_file << data[i];
 			if (data[i] == -1) {
-
 				debugMessage("Reached EOF in data");
 				unfinishedTransmission = false;
 				data_size = i;
 				break;
 			}
 		}
-
-		std::ofstream file;
-		file.open("receive_data.txt", std::fstream::app);
-		for (int i = 0; i < data_size; i++) {
-			file << data[i];
-		}
 		file.close();
-
 		VariableManager &vm = VariableManager::getInstance();
 		vm.set_LAST_DATA(time(0));
 	}

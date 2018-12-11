@@ -25,8 +25,8 @@ void sendFrameToPort(char* frame, size_t frameLen) {
 	DWORD numBytesWritten;
 
 	std::stringstream message;
-	message << "Frame to send: " << (LPSTR)frame << std::endl;
-	message << "Frame length: " << (int)frameLen;
+	message << "Frame to send: " << (LPSTR)frame;
+	message << "\tFrame length: " << (int)frameLen;
 	debugMessage(message.str());
 
 	if (!WriteFile(vm.get_portHandle(), frame, frameLen, &numBytesWritten, NULL)) {
@@ -44,7 +44,7 @@ void sendFrameToPort(char* frame, size_t frameLen) {
 			(LPTSTR)&lpMsgBuf,
 			0, NULL);
 
-		debugMessage((LPSTR)lpMsgBuf);
+		//debugMessage((LPSTR)lpMsgBuf);
 		debugMessage("Write File failed");
 	}
 	

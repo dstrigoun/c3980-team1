@@ -26,7 +26,7 @@ void readFromPort(PREADTHREADPARAMS readTP) {
 	VariableManager &vm = VariableManager::getInstance();
 	char readStr[1024];
 
-	if (!ReadFile(vm.get_portHandle(), readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
+	if (!ReadFile(vm.get_portHandle(), readStr, 1024, readTP->numBytesRead, NULL)) {
 		debugMessage("Read file failed");
 	}
 	else {

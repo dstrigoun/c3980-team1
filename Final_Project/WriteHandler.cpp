@@ -21,13 +21,11 @@
 --------------------------------------------------------------------------------------*/
 void sendFrame(LPVOID writeParams)
 {
-
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 	
 	(wp->frameLen == 3) ? sendCtrlFrame(writeParams) : sendDataFrame(writeParams);
-	
-	//sendFrameToPort(wp->portHandle,wp->frame, wp->frameLen);
+
 }
 
 void sendCtrlFrame(LPVOID writeParams) 
