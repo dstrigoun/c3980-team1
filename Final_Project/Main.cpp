@@ -205,11 +205,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 			*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
 			vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
 
-			wp->frame = CurrentSendingCharArrKieran;
-			
-			generateFrame(NULL, ENQ, wp);
-
+			wp->frame = vm.get_ENQ_frame();
+			wp->frameLen = 3;
+			sendFrame(wp);
 			vm.set_ENQ_FLAG(true);
+			
 			break;
 		}
 		break;
@@ -261,7 +261,9 @@ void goToIdle()
 	// check to see if there's data
 	if (vm.get_unfinishedTransmission()) {
 		debugMessage("Buffer not empty yet, sending ENQ to bid for line");
-		generateFrame(NULL, ENQ, wp);
+		wp->frame = vm.get_ENQ_frame();
+		wp->frameLen = 3;
+		sendFrame(wp);
 		vm.set_ENQ_FLAG(true);
 	}
 	else {
@@ -459,4 +461,7 @@ void create_CTRL_frames() {
 
 	generateCtrlFrame(tempFrame, EOT);
 	vm.set_EOT_frame(tempFrame);
+
+	generateCtrlFrame(tempFrame, ENQ);
+	vm.set_ENQ_frame(tempFrame);
 }
