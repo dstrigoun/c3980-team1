@@ -42,6 +42,7 @@
 #include <atlbase.h>
 #include <AtlConv.h>
 #include <queue>
+
 using namespace std;
 
 DWORD idleTimeoutThreadId;
@@ -146,7 +147,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	cc.wVersion = 0x100;
 
 	SetCommMask(vm.get_portHandle(), EV_RXCHAR);
-
+	debugMessage("Starting Connection");
 	//start thread with checkIdleTimeout
 	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
@@ -207,14 +208,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 			wp->frame = CurrentSendingCharArrKieran;
 			
-			generateFrame(NULL, ENQ, wp);
+			generateAndSendFrame(ENQ, wp);
+			vm.reset_numFramesSent();
+			vm.reset_numFramesReSent();
+			
+			PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
 
+			//receiveFrame(enqFrameTest, rtp);
 			vm.set_ENQ_FLAG(true);
+			
 			break;
 		}
 		break;
 
 	case WM_DESTROY:	// Terminate program
+		debugMessage("Connected Terminated");
 		SetEvent(stopThreadEvent);
 		CloseHandle(hIdleTimeoutThrd);
 		CloseHandle(eventHandlerThrd);
@@ -413,7 +421,7 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 void terminateProgram() 
 {
 	MessageBox(NULL, "Lost connection.", "", MB_OK);
-
+	debugMessage("Lost Connection");
 	SetEvent(stopThreadEvent);
 	CloseHandle(hIdleTimeoutThrd);
 	CloseHandle(eventHandlerThrd);

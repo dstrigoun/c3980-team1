@@ -26,15 +26,12 @@ void readFromPort(PREADTHREADPARAMS readTP) {
 	VariableManager &vm = VariableManager::getInstance();
 	char readStr[1024];
 
-	if (!ReadFile(vm.get_portHandle(), readStr, sizeof(readStr), readTP->numBytesRead, NULL)) {
+	if (!ReadFile(vm.get_portHandle(), readStr, 1024, readTP->numBytesRead, NULL)) {
 		debugMessage("Read file failed");
 	}
 	else {
 		if (*(readTP->numBytesRead) > 0) {
-			std::ofstream file;
-			file.open("log.txt", std::fstream::app);
-			file << time(0) << ": \tNumBytesRead: " << *(readTP->numBytesRead) << "\n";
-			file.close();
+			debugMessage("NumBytesRead: " + *(readTP->numBytesRead));
 			receiveFrame(readStr, readTP);
 		}
 	}

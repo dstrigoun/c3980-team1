@@ -32,20 +32,24 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	VariableManager &vm = VariableManager::getInstance();
 	if (vm.get_countDataFrameBytesRead() > 0
 		&& !(frame[1] == DC1 || frame[1] == DC2)) {
-		vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+		vm.set_countDataFrameBytesRead((int)(vm.get_countDataFrameBytesRead() + *(rtp->numBytesRead)));
 		readDataFrame(frame, *(rtp->numBytesRead), false);
 		if (vm.get_countDataFrameBytesRead() == 1024) {
 			vm.set_countDataFrameBytesRead(0);
+			generateAndSendFrame(ACK, wp);
+			debugMessage("Received entire frame, Sending ACK");
 		}
 	}
 	// check type of frame
-	 else if (frame[0] == SYN) {
-		if (frame[1] == DC1 || frame[1] == DC2) {
+	if (frame[0] == SYN) {
+		if (vm.get_curState()!="IDLE" && (frame[1] == DC1 || frame[1] == DC2)) {
 			//data frame
-			vm.set_countDataFrameBytesRead(*(vm.get_countDataFrameBytesRead() + rtp->numBytesRead));
+			vm.set_countDataFrameBytesRead((int)(vm.get_countDataFrameBytesRead() + *(rtp->numBytesRead)));
 			readDataFrame(frame, *(rtp->numBytesRead), true);
 			if (vm.get_countDataFrameBytesRead() == 1024) {
 				vm.set_countDataFrameBytesRead(0);
+				generateAndSendFrame(ACK, wp);
+				//debugMessage("Received entire frame, Sending ACK");
 			}
 		}
 		else {
@@ -56,6 +60,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	else {
 		debugMessage("Frame Corrupt, 1st Byte not SYN");
 	}
+	debugMessage("" + vm.get_countDataFrameBytesRead());
 }
 
 /*-------------------------------------------------------------------------------------
@@ -80,11 +85,15 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --	NOTES:
 --	Call this generic send function to generate a frame to be sent, control or data
 --------------------------------------------------------------------------------------*/
-void generateFrame(const char* data, char ctrl, PWriteParams wp) {
+void generateAndSendFrame(char ctrl, PWriteParams wp) {
+
+
+	VariableManager &vm = VariableManager::getInstance();
+	
 	char localCtlFrame[3] = {};
 	char localDataFrame[1024] = {};
 	(ctrl != NULL) ? generateCtrlFrame(localCtlFrame, ctrl)
-		: generateDataFrame(localDataFrame, data);
+		: generateDataFrame(localDataFrame);
 	
 	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
 	
@@ -98,7 +107,6 @@ void generateFrame(const char* data, char ctrl, PWriteParams wp) {
 			wp->frame[i] = localDataFrame[i];
 		}
 	}
-	
 	
 	sendFrame(wp);
 	
@@ -131,15 +139,13 @@ void generateFrame(const char* data, char ctrl, PWriteParams wp) {
 --	Call this to read a data frame and handle the data retrieved from the frame
 --------------------------------------------------------------------------------------*/
 void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
-	std::ofstream log_file;
-
 	if (false /*frame[1] != nextFrameToReceive*/) { //tempeoaraliy made this always fail
 		//duplicate frame 
 	}
 	else {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
 		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
-
+		debugMessage("Next Frame to Receive: " + nextFrameToReceive);
 		//check for dummy CRC bit
 		if (frame[1023] == 1) {
 			debugMessage("CRC bit is correct");
@@ -172,8 +178,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 			}
 		}
 		
-		
-
 		// Check for EOF (-1) in the data
 		//int data_size = sizeof(data) / sizeof(*data);
 		int data_size = 0;
@@ -183,28 +187,20 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 		else {
 			data_size = numBytesRead;
 		}
-		
-		for (int i = 0; i < data_size; ++i) {
-			log_file.open("log.txt", std::fstream::app);
-			log_file << data[i];
-			log_file.close();
 
+		std::ofstream file;
+		file.open("receive_data.txt", std::fstream::app);
+		for (int i = 0; i < data_size; i++) {
+			file << data[i];
+			//log_file << data[i];
 			if (data[i] == -1) {
-
 				debugMessage("Reached EOF in data");
 				unfinishedTransmission = false;
 				data_size = i;
 				break;
 			}
 		}
-
-		std::ofstream file;
-		file.open("receive_data.txt", std::fstream::app);
-		for (int i = 0; i < data_size; i++) {
-			file << data[i];
-		}
 		file.close();
-
 		VariableManager &vm = VariableManager::getInstance();
 		vm.set_LAST_DATA(time(0));
 	}
@@ -246,16 +242,19 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	debugMessage("ENQ_FLAG: " + tempENQ);
 
 	// handle behaviour based on control char received
+
 	if (vm.get_curState() == "IDLE") {
+
 		if (ctrlChar == EOT) {
 			vm.set_LAST_EOT(time(0));
 			debugMessage("Received EOT");
 		}
+
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
 			debugMessage("Received ENQ & sending ACK");
 
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
-			generateFrame(nullptr, ACK, wp);
+			generateAndSendFrame( ACK, wp);
 
 			vm.set_curState("RECEIVE");
 			debugMessage("curState is now RECEIVE");
@@ -270,25 +269,33 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 			//send the first data frame
 			
-			char* payload = getPayload();
-
-			debugMessage("Got payload");
-			generateFrame(payload, NULL, wp);
+			debugMessage("Sending payload");
+			generateAndSendFrame(NULL, wp);
+			
 		}
 	}
 	else if (vm.get_curState() == "SEND")
 	{
-		if (ctrlChar == EOT)
+		switch (ctrlChar)
 		{
+		case EOT:
 			goToIdle();
-		}
-		if (ctrlChar == ACK) {
-			char* payload = getPayload();
-			generateFrame(payload, NULL, wp);
+		case ACK:
+			//update DC1/DC2
+			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
+			//trigger send frame
+			debugMessage("Received ACK for Data Frame" + nextFrameToSend);
+			generateAndSendFrame(NULL, wp);
+			break;
+		case NAK:
+			//trigger resend frame
+			debugMessage("Received NAK for Data Frame. Triggering Resend");
+			//resendDataFrame(wp);
+			break;
 		}
 	}
 	else if (vm.get_curState() == "RECEIVE") {
-		if (ctrlChar == DC1 || ctrlChar == DC2) {
+		/*if (ctrlChar == DC1 || ctrlChar == DC2) {
 			bool lastDataFrame = false;
 			std::ofstream file;
 			file.open("log.txt", std::fstream::app);
@@ -304,11 +311,10 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			file << std::endl;
 			file.close();
 
-			generateFrame(nullptr, ACK, wp);
+			generateAndSendFrame( ACK, wp);
 
-			debugMessage("ENQ was approved, go to SEND state");
-		}
-		else if (ctrlChar == EOT)
+		}*/
+		if (ctrlChar == EOT)
 		{
 			goToIdle();
 		}
@@ -340,10 +346,16 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --	DATA FRAME MAKEUP
 --	SYN | DC1/2 | DATA | CRC
 --------------------------------------------------------------------------------------*/
-void generateDataFrame(char* dataFrame, const char* data) {
+void generateDataFrame(char* dataFrame) {
 	// use local data frame to append data
+
+	VariableManager &vm = VariableManager::getInstance();
+
+	//vm.set_lastFrameSent(getPayload());
+
 	char localData[1024] = {};
 	*localData = *dataFrame;
+	char* data = (char*)getPayload();
 
 	localData[0] = SYN;
 	localData[1] = nextFrameToSend;
@@ -376,6 +388,7 @@ void generateDataFrame(char* dataFrame, const char* data) {
 	//strcat_s(dataFrame, 1021, msgbuf);
 	//-------------------------------------------------------
 
+	//should set lastFrameSent here 
 
 	nextFrameToSend = (nextFrameToSend == DC1) ? DC2 : DC1;
 }

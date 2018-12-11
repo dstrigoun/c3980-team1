@@ -1,6 +1,13 @@
 #pragma once
 
 
+#define STRICT_TYPED_ITEMIDS
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <atlbase.h>
+#include <AtlConv.h>
+
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>

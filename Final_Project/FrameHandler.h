@@ -7,6 +7,7 @@
 #include "Main.h"
 #include "WriteParams.h"
 #include "ReadThreadParams.h"
+#include "WriteHandler.h"
 
 static const char SYN = 22;
 static const char DC1 = 17;
@@ -23,13 +24,13 @@ static char nextFrameToSend = DC1;
 static bool isClearToSend = true;
 
 void receiveFrame(const char* frame, PREADTHREADPARAMS rtp);
-void generateFrame(const char* data, char ctrl, PWriteParams wp);
+void generateAndSendFrame(char ctrl, PWriteParams wp);
 
 
 void readDataFrame(const char* frame, DWORD numBytesSent, bool firstPartOfFrame);
 void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp);
 
-void generateDataFrame(char* dataFrame, const char* data);
+void generateDataFrame(char* dataFrame);
 void generateCtrlFrame(char* ctrlFrame, char ctrl);
 
 DWORD WINAPI receiveTimeout(LPVOID n);
