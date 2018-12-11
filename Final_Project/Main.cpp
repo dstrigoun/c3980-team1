@@ -260,24 +260,25 @@ void goToIdle()
 
 	// check to see if there's data
 	if (vm.get_unfinishedTransmission()) {
+		debugMessage("Buffer not empty yet, sending ENQ to bid for line");
 		generateFrame(NULL, ENQ, wp);
 		vm.set_ENQ_FLAG(true);
 	}
-	// start all idle threads
+	else {
+		vm.set_LAST_EOT(time(0));
+		hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
-	vm.set_LAST_EOT(time(0));
-	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+		debugMessage("IDLE timeout created, starting to send EOTs");
 
-	debugMessage("IDLE timeout created, starting to send EOTs");
-		
-	std::stringstream message;
-	message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
-	debugMessage(message.str());
+		std::stringstream message;
+		message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
+		debugMessage(message.str());
 
-	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
+		size_t frameLen = 3;
+		PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
 
-	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
+		senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
+	}
 }
 
 /*-------------------------------------------------------------------------------------
