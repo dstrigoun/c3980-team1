@@ -285,6 +285,8 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
 			//trigger send frame
 			debugMessage("Received ACK for Data Frame" + nextFrameToSend);
+			// increment ACK count
+			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
 			generateAndSendFrame(NULL, wp);
 			break;
 		case NAK:
@@ -295,6 +297,13 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 	}
 	else if (vm.get_curState() == "RECEIVE") {
+		switch (ctrlChar)
+		{
+		case ACK:
+			// increment ACK count
+			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
+			break;
+		}
 		/*if (ctrlChar == DC1 || ctrlChar == DC2) {
 			bool lastDataFrame = false;
 			std::ofstream file;

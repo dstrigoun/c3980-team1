@@ -87,6 +87,9 @@ public:
 		return this->numFramesReSent >= MAX_RESENDS;
 	}
 
+	int get_numACKReceived() { return this->numACKReceived; }
+	void set_numACKReceived(int num) { this->numACKReceived; }
+
 private:
 	VariableManager() {}
 
@@ -101,6 +104,7 @@ private:
 	LPCSTR lastFrameSent;
 	const int MAX_RESENDS = 3;
 	const int MAX_FRAMES_SENT = 10;
+	int numACKReceived;
 
 	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
 	int countDataFrameBytesRead;

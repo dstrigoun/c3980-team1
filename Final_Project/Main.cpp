@@ -48,12 +48,14 @@ using namespace std;
 DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
 DWORD senderThreadId;
+DWORD displayThreadId;
 
 DWORD numBytesRead;
 
 HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
 HANDLE senderThrd;
+HANDLE displayThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 COMMCONFIG	cc;
@@ -114,6 +116,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	VariableManager& vm = VariableManager::getInstance();
 	vm.set_curState("IDLE");
 	vm.set_countDataFrameBytesRead(0);
+	vm.set_numACKReceived(0);
 
 	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		600, 400, NULL, NULL, hInst, NULL);
@@ -153,6 +156,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
+	displayThrd = CreateThread(NULL, 0, displayStats, vm.get_hwnd(), 0, &displayThreadId);
 
 	create_CTRL_frames();
 
@@ -462,4 +466,33 @@ void create_CTRL_frames() {
 
 	generateCtrlFrame(tempFrame, EOT);
 	vm.set_EOT_frame(tempFrame);
+}
+
+DWORD WINAPI displayStats(LPVOID hwnd)
+{
+	VariableManager& vm = VariableManager::getInstance();
+	const int char_height{ 15 };
+	const int char_width{ 8 };
+	HDC hdc;
+	PAINTSTRUCT paintstruct;
+
+	vm.set_numACKReceived(0);
+
+	char ackStats[1024];
+	sprintf_s(ackStats, "ACKs received: %d", vm.get_numACKReceived());
+
+	hdc = GetDC((HWND)hwnd);
+	TextOut(hdc, 0, 0, ackStats, strlen(ackStats));
+	ReleaseDC((HWND)hwnd, hdc);
+
+	while (1)
+	{
+		sprintf_s(ackStats, "ACKs received: %d", vm.get_numACKReceived());
+
+		hdc = BeginPaint((HWND)hwnd, &paintstruct); // Acquire DC
+		TextOut(hdc, 0, 0, ackStats, strlen(ackStats)); // output character
+		EndPaint((HWND)hwnd, &paintstruct); // Release DC
+
+	}
+	return 0;
 }
