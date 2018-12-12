@@ -109,6 +109,13 @@ public:
 	void set_isDuplicate(bool b) { this->isDuplicate = b; }
 	bool get_isDuplicate() { return this->isDuplicate; }
 
+	void set_hitEOF(bool b) {
+		this->hitEOF = b;
+	}
+	bool get_hitEOF() {
+		return this->hitEOF;
+	}
+
 private:
 	VariableManager() {}
 
@@ -130,6 +137,8 @@ private:
 	char nextFrameToReceive = 17;
 	char nextFrameToSend = 17;
 	bool isDuplicate = false;
+
+	bool hitEOF = false;
 
 	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
 	int countDataFrameBytesRead;

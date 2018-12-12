@@ -302,6 +302,8 @@ void goToIdle()
 		wp->frame = vm.get_ENQ_frame();
 		wp->frameLen = 3;
 		sendFrame(wp);
+		vm.reset_numFramesSent();
+		vm.reset_numFramesReSent();
 		vm.set_ENQ_FLAG(true);
 	}
 }

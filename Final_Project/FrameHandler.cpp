@@ -264,18 +264,19 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
 	debugMessage("ENQ_FLAG: " + tempENQ);
 
+	std::stringstream message;
+	message << "Received frame: " << (LPSTR)frame;
+	debugMessage(message.str());
+
 	// handle behaviour based on control char received
 
 	if (vm.get_curState() == "IDLE") {
 
 		if (ctrlChar == EOT) {
 			vm.set_LAST_EOT(time(0));
-			debugMessage("Received EOT");
 		}
 
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
-			debugMessage("Received ENQ & sending ACK");
-
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			generateAndSendFrame( ACK, wp);
 
@@ -305,11 +306,20 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		case EOT:
 			goToIdle();
 		case ACK:
-			if (vm.get_currUploadFile() == nullptr) {
+			/*if (vm.get_currUploadFile() == nullptr) {
 				vm.set_unfinishedTransmission(false);
 				goToIdle();
 				break;
+			}*/
+			if (vm.get_hitEOF()) {
+				vm.set_unfinishedTransmission(false);
+				goToIdle();
+				vm.get_currUploadFile()->close();
+				vm.set_currUploadFile(nullptr);
+				vm.set_hitEOF(false);
+				break;
 			}
+
 			//update DC1/DC2
 			vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
 			//trigger send frame

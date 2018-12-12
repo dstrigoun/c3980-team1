@@ -124,17 +124,13 @@ char* getPayload() { //todo free char* pointer later?
 	}
 	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
 		payload[i] = currFile->get();
-
-		std::ofstream file;
-		file.open("log.txt", std::fstream::app);
-		//file << time(0) << ": \tinGetpAYLOAD loop, i = " << i << " data: " << payload[i] << std::endl;
-		file.close();
 		
 		if (currFile->eof()) {
-			payload[i] = EOF;
+			//payload[i] = EOF;
 			debugMessage("HIT EOF");
-			vm.get_currUploadFile()->close();
-			vm.set_currUploadFile(nullptr);
+			vm.set_hitEOF(true);
+			//vm.get_currUploadFile()->close();
+			//vm.set_currUploadFile(nullptr);
 			break;
 		}
 		if (currFile->fail()) {
