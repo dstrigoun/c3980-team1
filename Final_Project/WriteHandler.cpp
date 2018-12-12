@@ -72,7 +72,6 @@ void resendDataFrame()
 		debugMessage("Reached Max Number of Resends");
 		goToIdle();
 	}
-
 }
 
 /*-------------------------------------------------------------------------------------

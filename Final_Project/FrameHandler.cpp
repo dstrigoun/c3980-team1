@@ -218,7 +218,7 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 				file << data[i];
 				if (data[i] == -1) {
 					debugMessage("Reached EOF in data");
-					unfinishedTransmission = false;
+					vm.set_unfinishedTransmission(false);
 					data_size = i;
 					break;
 				}
@@ -288,7 +288,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
-			unfinishedTransmission = true;
+			vm.set_unfinishedTransmission(true);
 
 			debugMessage("Sending payload");
 			//send the first data frame
@@ -303,6 +303,11 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		case EOT:
 			goToIdle();
 		case ACK:
+			if (vm.get_currUploadFile() == nullptr) {
+				vm.set_unfinishedTransmission(false);
+				goToIdle();
+				break;
+			}
 			//update DC1/DC2
 			vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
 			//trigger send frame
