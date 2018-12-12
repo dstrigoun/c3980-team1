@@ -33,6 +33,25 @@ void sendFrame(LPVOID writeParams)
 
 }
 
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	sendCtrlFrame
+--
+--	DATE:			December 11, 2018 
+--
+--	REVISIONS:		December 11, 2018 
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		DWORD WINAPI sendCtrlFrame(LPVOID writeParams)
+--						LPVOID writeParams - contains the port and frame
+--
+--	RETURNS:		returns 0 when finished attempt to send
+--
+--	NOTES:
+--	Call this function to send a control frame
+--------------------------------------------------------------------------------------*/
 void sendCtrlFrame(LPVOID writeParams) 
 {
 	VariableManager &vm = VariableManager::getInstance();
@@ -44,6 +63,25 @@ void sendCtrlFrame(LPVOID writeParams)
 	debugMessage("CtrlFrame Sent Successfully");
 }
 
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	sendFrame
+--
+--	DATE:			December 11, 2018
+--
+--	REVISIONS:		December 11, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		DWORD WINAPI sendDataFrame(LPVOID writeParams)
+--						LPVOID writeParams - contains the port and frame
+--
+--	RETURNS:		returns 0 when finished attempt to send
+--
+--	NOTES:
+--	Call this function to send a data frame
+--------------------------------------------------------------------------------------*/
 void sendDataFrame(LPVOID writeParams)
 {
 	VariableManager &vm = VariableManager::getInstance();
@@ -58,6 +96,24 @@ void sendDataFrame(LPVOID writeParams)
 
 }
 
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	resendDataFrame
+--
+--	DATE:			December 11, 2018
+--
+--	REVISIONS:		December 11, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		DWORD WINAPI resendDataFrame()
+--
+--	RETURNS:		returns 0 when finished attempt to send
+--
+--	NOTES:
+--	Call this to resend the previous data frame
+--------------------------------------------------------------------------------------*/
 void resendDataFrame()
 {
 	VariableManager &vm = VariableManager::getInstance();
@@ -107,15 +163,12 @@ DWORD WINAPI sendEOTs(LPVOID n)
 	sep = (PsendEOTParams)n;
 
 	DWORD waitResult;
-	sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
 
 	do {
 		waitResult = WaitForSingleObject(*(vm.get_stopEOTThreadEvent()), 500);	
 		
 		switch (waitResult) {
 		case WAIT_TIMEOUT:
-			debugMessage("case timeout");
-
 			sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
 
 			break;
@@ -126,6 +179,7 @@ DWORD WINAPI sendEOTs(LPVOID n)
 		default:
 			;
 		}
-	} while (1);
-	
+	} while (vm.get_curState() == "IDLE");
+	ExitThread(0);
+	return 0;
 }

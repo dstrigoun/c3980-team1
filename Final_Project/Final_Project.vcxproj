@@ -123,6 +123,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CRC.h" />
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="FileChooser.h" />
     <ClInclude Include="FrameHandler.h" />

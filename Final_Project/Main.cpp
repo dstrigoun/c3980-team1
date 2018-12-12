@@ -131,6 +131,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	vm.set_hwnd(hWnd);
 
 	srand((unsigned int)time(0));
+	rand();
 
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
@@ -252,7 +253,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		EndPaint((HWND)hwnd, &paintstruct); // Release DC
 		break;
 	case WM_DESTROY:	// Terminate program
-		debugMessage("Connected Terminated");
+
+		debugMessage("Connection Terminated");
 		CloseHandle(hIdleTimeoutThrd);
 		CloseHandle(eventHandlerThrd);
 		CloseHandle(senderThrd);
@@ -288,9 +290,8 @@ void goToIdle()
 	VariableManager& vm = VariableManager::getInstance();
 
 	std::string previous_state = (vm.get_curState() == "SEND") ? "SEND" : "RECEIVE";
-	vm.set_curState("IDLE");
-
 	debugMessage("Current State: " + vm.get_curState());
+	vm.set_curState("IDLE");
 	debugMessage("Going to IDLE");
 	vm.set_ENQ_FLAG(false);
 
@@ -377,7 +378,10 @@ void debugMessage(std::string message)
 --------------------------------------------------------------------------------------*/
 void triggerRandomWait() 
 {
-	DWORD timeToWait_ms = randomNumberGenerator(0, MAX_RANDOM_WAIT_TIME_MS);
+	DWORD timeToWait_ms = randomNumberGenerator(1, MAX_RANDOM_WAIT_TIME_MS);
+	std::stringstream message;
+	message << "Random Wait in ms: " << timeToWait_ms << std::endl;
+	debugMessage(message.str());
 	Sleep(timeToWait_ms);
 }
 
@@ -403,8 +407,12 @@ void triggerRandomWait()
 --------------------------------------------------------------------------------------*/
 int randomNumberGenerator(int min, int max)
 {
-	int randomNum = (int)((double)rand() / (RAND_MAX + 1) * (max - min) + min);
-	return randomNum;
+	std::random_device rd;     // only used once to initialise (seed) engine
+	std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+	std::uniform_int_distribution<int> uni(min, max); // guaranteed unbiased
+
+	auto random_integer = uni(rng);
+	return random_integer;
 }
 
 /*-------------------------------------------------------------------------------------
@@ -442,6 +450,7 @@ DWORD WINAPI checkIdleTimeout(LPVOID n)
 		debugMessage(message.str());
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
 	}
+	ExitThread(0);
 	return 0;
 }
 

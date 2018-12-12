@@ -3,6 +3,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
+#include "CRC.h"
 #include "Main.h"
 #include "WriteParams.h"
 #include "ReadThreadParams.h"

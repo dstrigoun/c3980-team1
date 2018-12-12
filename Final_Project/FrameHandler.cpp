@@ -57,7 +57,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			if (vm.get_countDataFrameBytesRead() == 1024) {
 				vm.set_countDataFrameBytesRead(0);
 				if (vm.get_isDuplicate()) {
-					generateAndSendFrame(NAK, wp);
+					generateAndSendFrame(ACK, wp);
 					vm.set_isDuplicate(false);
 				}
 				else {
@@ -76,7 +76,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 }
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	generateFrame
+--	FUNCTION:	generateAndSendFrame
 --
 --	DATE:			November 24, 2018
 --
@@ -87,7 +87,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void generateFrame(const char* data, char ctrl, PWriteParams wp)
+--	INTERFACE:		void generateAndSendFrame(char ctrl, PWriteParams wp)
 --						const char* data - data to send
 --						char ctrl - control character to send
 --						PWriteParams wp - struct with frame to be written
@@ -103,20 +103,16 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 	
 	char localCtlFrame[3] = {};
 	char localDataFrame[1024] = {};
-	(ctrl != NULL) ? generateCtrlFrame(localCtlFrame, ctrl)
-		: generateDataFrame(localDataFrame);
-	
-	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
 	
 	if (ctrl != NULL) {
-		for (int i = 0; i < wp->frameLen; i++) {
-			wp->frame[i] = localCtlFrame[i];
-		}
+		wp->frameLen = 3;
+		wp->frame = localCtlFrame;
+		generateCtrlFrame(localCtlFrame, ctrl);
 	}
 	else {
-		for (int i = 0; i < wp->frameLen; i++) {
-			wp->frame[i] = localDataFrame[i];
-		}
+		wp->frameLen = 1024;
+		wp->frame = localDataFrame;
+		generateDataFrame(localDataFrame);
 	}
 	sendFrame(wp);
 
@@ -148,24 +144,19 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 --------------------------------------------------------------------------------------*/
 void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
 	VariableManager &vm = VariableManager::getInstance();
-
+	
 	if (frame[1] == DC1 || frame[1] == DC2) {
 		if (frame[1] != vm.get_nextFrameToReceive()) { //tempeoaraliy made this always fail
 			//duplicate frame 
-			debugMessage("Received Duplicate; Triggering Resend");
+			debugMessage("Received Duplicate");
 			vm.set_isDuplicate(true);
 		}
 		else {
 			vm.set_isDuplicate(false);
 		}
-	}
-	
-	else {
-		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
-		//check for dummy CRC bit
-		if (frame[1023] == 1) {
-			debugMessage("CRC bit is correct");
-		}
+		
+		std::uint8_t crc = CRC::Calculate(frame + 2, 1022, CRC::CRC_8());
+		
 
 		char data[1021] = {};
 
@@ -179,15 +170,14 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 				data[i] = frame[i];
 			}
 		}
-		
 		int data_size = 0;
 		if (firstPartOfFrame) {
-			data_size = numBytesRead -2;
+			data_size = numBytesRead - 2;
 		}
 		else {
 			data_size = numBytesRead;
 		}
-	
+
 		std::ofstream file;
 		if (!vm.get_isDuplicate()) {
 			file.open("receive_data.txt", std::fstream::app);
@@ -242,11 +232,17 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
 	debugMessage("ENQ_FLAG: " + tempENQ);
 
-	std::stringstream message;
-	message << "Received Frame: " << (LPSTR)frame << std::endl;
-	debugMessage(message.str());
-	// handle behaviour based on control char received
 
+	char *temp = new char[4];
+	strncpy_s(temp, 4, frame, 3);
+
+	std::stringstream message;
+	message << "Received Frame: " << (LPSTR)temp << std::endl;
+	debugMessage(message.str());
+	
+	delete [] temp;
+
+	// handle behaviour based on control char received
 	if (vm.get_curState() == "IDLE") {
 		displayThrd = CreateThread(NULL, 0, displayStats, vm.get_hwnd(), 0, &displayThreadId);
 
@@ -289,6 +285,10 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			vm.set_numACKReceived(vm.get_numACKReceived() + 1); // increment ACK count
 			if (vm.get_hitEOF()) {
 				vm.set_unfinishedTransmission(false);
+				wp->frame = vm.get_EOT_frame();
+				wp->frameLen = 3;
+				sendFrame(wp);
+				vm.set_hasSentEOT(true);
 				goToIdle();
 				vm.get_currUploadFile()->close();
 				vm.set_currUploadFile(nullptr);
@@ -383,12 +383,11 @@ void generateDataFrame(char* dataFrame) {
 		vm.get_lastFrameSent()[i] = localData[i];
 	}
 
-	//append the dummy CRC bit
-	char dummyCRC = 1;
-	dataFrame[1023] = dummyCRC;
-	vm.get_lastFrameSent()[1023] = dummyCRC;
-	debugMessage("Generated CRC bit is: " + dummyCRC);
-
+	//append the CRC bit
+	std::uint8_t crc = CRC::Calculate(dataFrame + 2, 1021, CRC::CRC_8());
+	dataFrame[1023] = crc;
+	vm.get_lastFrameSent()[1023] = crc;
+	debugMessage("Generated CRC bit is: " + crc);
 }
 
 /*-------------------------------------------------------------------------------------
@@ -462,9 +461,30 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 		debugMessage(message.str());
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
 	}
+	ExitThread(0);
 	return 0;
 }
 
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	transmissionTimeout
+--
+--	DATE:			December 12, 2018
+--
+--	REVISIONS:		December 12, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		DWORD WINAPI transmissionTimeout(LPVOID n)
+--						LPVOID n: void pointer to thread param
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check the difference between
+--  the current time and the time when last transmission was sent
+--------------------------------------------------------------------------------------*/
 DWORD WINAPI transmissionTimeout(LPVOID n)
 {
 	VariableManager& vm = VariableManager::getInstance();
@@ -473,7 +493,7 @@ DWORD WINAPI transmissionTimeout(LPVOID n)
 
 	DWORD waitResult;
 
-	while (1) {
+	while (vm.get_curState() != "RECEIVE") {
 		waitResult = WaitForSingleObject(*(vm.get_stopTransmitTimeoutThreadEvent()), 10);
 		switch (waitResult)
 		{
@@ -492,6 +512,8 @@ DWORD WINAPI transmissionTimeout(LPVOID n)
 			break;
 		}
 	}
+	ExitThread(0);
+	return 0;
 }
 
 /*-------------------------------------------------------------------------------------

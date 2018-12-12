@@ -74,6 +74,9 @@
     <ClInclude Include="sendEOTParams.h">
       <Filter>Header Files\DataLink</Filter>
     </ClInclude>
+    <ClInclude Include="CRC.h">
+      <Filter>Header Files\DataLink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
