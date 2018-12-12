@@ -65,6 +65,8 @@ char CurrentSendingCharArrKieran[1024];
 
 PREADTHREADPARAMS rtp;
 
+const int char_height{ 15 };
+const int char_width{ 8 };
 
 #pragma warning (disable: 4096)
 
@@ -116,6 +118,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	VariableManager& vm = VariableManager::getInstance();
 	vm.set_curState("IDLE");
 	vm.set_countDataFrameBytesRead(0);
+	vm.set_numACKReceived(0);
 	vm.set_stopThreadEvent(&stopThreadEvent);
 	vm.set_stopEOTThreadEvent(&stopEOTThreadEvent);
 	vm.set_stopTransmitTimeoutThreadEvent(&stopTransmitTimeoutThread);
@@ -165,7 +168,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	WriteParams wp(vm.get_EOT_frame(), frameLen);
 	PsendEOTParams sep = new sendEOTParams(stopEOTThreadEvent, &wp);
 	
+
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)sep, 0, &senderThreadId);
+	initialDisplay();
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -182,10 +187,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 --	DATE:			November 19, 2018
 --
 --	REVISIONS:		November 19, 2018
+--					December 11, 2018 - WM_PAINT case added
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Alexander Song
 --
 --	INTERFACE:		LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam,
 --											LPARAM lParam)
@@ -199,6 +205,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 	WPARAM wParam, LPARAM lParam)
 {
 	VariableManager& vm = VariableManager::getInstance();
+
+	HDC hdc;
+	PAINTSTRUCT paintstruct;
+	
 	switch (Message)
 	{
 	case WM_COMMAND:
@@ -207,7 +217,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		case IDM_UPLOAD:
 			debugMessage("Clicked upload");
 			if (vm.get_unfinishedTransmission()) {
-				MessageBox(hwnd, "file currenrtly uploading, please try again later", "sorry", MB_OK);
+				MessageBox(hwnd, "file currently uploading, please try again later", "sorry", MB_OK);
 			}
 			else {
 				TerminateThread(senderThrd, 0);
@@ -228,11 +238,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 			}
 
-
 			break;
 		}
 		break;
 
+	case WM_PAINT:
+		hdc = BeginPaint((HWND)hwnd, &paintstruct);
+		char ackStats[1024];
+		char nakStats[1024];
+		char packetStats[1024];
+		char berStats[1024];
+
+		TextOut(hdc, 0, 0, packetStats, strlen(packetStats));
+		TextOut(hdc, 0, char_height, berStats, strlen(berStats));
+		TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
+		TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
+		EndPaint((HWND)hwnd, &paintstruct); // Release DC
+		break;
 	case WM_DESTROY:	// Terminate program
 		debugMessage("Connected Terminated");
 		//SetEvent(stopThreadEvent);
@@ -493,4 +515,44 @@ void create_CTRL_frames() {
 	char tempENQFrame[3] = {};
 	generateCtrlFrame(tempENQFrame, ENQ);
 	vm.set_ENQ_frame(tempENQFrame);
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	initialDisplay
+--
+--	DATE:			December 11, 2018
+--
+--	REVISIONS:		December 11, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Alexander Song
+--
+--	INTERFACE:		void initialDisplay()
+--
+--	RETURNS:		void
+--
+--	NOTES:
+--	Called when the program enters WinProc to display the initial statistics
+--------------------------------------------------------------------------------------*/
+void initialDisplay()
+{
+	VariableManager& vm = VariableManager::getInstance();
+	char ackStats[1024];
+	char nakStats[1024];
+	char packetStats[1024];
+	char berStats[1024];
+
+	sprintf_s(packetStats, "Packets sent: %d", vm.get_numPacketsSent());
+	sprintf_s(berStats, "Bit Error Rate: %0.4f", vm.get_BER());
+	sprintf_s(ackStats, "ACKs received: %d", vm.get_numACKReceived());
+	sprintf_s(nakStats, "NAKs received: %d", vm.get_numNAKReceived());
+
+	HDC hdc = GetDC((HWND)vm.get_hwnd());
+
+	TextOut(hdc, 0, 0, packetStats, strlen(packetStats));
+	TextOut(hdc, 0, char_height, berStats, strlen(berStats));
+	TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
+	TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
+	ReleaseDC((HWND)vm.get_hwnd(), hdc);
 }

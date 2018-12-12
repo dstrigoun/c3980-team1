@@ -4,6 +4,8 @@
 
 DWORD timeoutThreadId;
 HANDLE hTimeoutThrd;
+HANDLE displayThrd;
+DWORD displayThreadId;
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
@@ -229,6 +231,8 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 --					November 26, 2018 - receive EOT and ENQ and update state
 --					November 28, 2018 - receive ACK when ENQ was sent and update state
 --					December 8th, 2018 - write debug messages to log file
+--					December 11th, 2018 - increment ACK and NAK received counts
+--												and added displayThrd
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
@@ -260,6 +264,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	// handle behaviour based on control char received
 
 	if (vm.get_curState() == "IDLE") {
+		displayThrd = CreateThread(NULL, 0, displayStats, vm.get_hwnd(), 0, &displayThreadId);
 
 		if (ctrlChar == EOT) {
 			vm.set_LAST_EOT(time(0));
@@ -281,6 +286,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			SetEvent(vm.get_stopTransmitTimeoutThreadEvent());
 			vm.set_curState("SEND");
 			vm.set_unfinishedTransmission(true);
+			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
 
 			debugMessage("Sending payload");
 			//send the first data frame
@@ -297,6 +303,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 				goToIdle();
 			}
 		case ACK:
+			vm.set_numACKReceived(vm.get_numACKReceived() + 1); // increment ACK count
 			if (vm.get_hitEOF()) {
 				vm.set_unfinishedTransmission(false);
 				goToIdle();
@@ -323,12 +330,21 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			}
 			break;
 		case NAK:
+			vm.set_numNAKReceived(vm.get_numNAKReceived() + 1); // increment NAK count
 			//trigger resend frame
 			resendDataFrame();
 			break;
 		}
 	}
 	else if (vm.get_curState() == "RECEIVE") {
+		switch (ctrlChar)
+		{
+		case ACK:
+			// increment ACK count
+			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
+			break;
+		}
+
 		if (ctrlChar == EOT)
 		{
 
@@ -549,6 +565,7 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 	}
 	return 0;
 }
+
 DWORD WINAPI transmissionTimeout(LPVOID n)
 {
 	VariableManager& vm = VariableManager::getInstance();
@@ -576,5 +593,57 @@ DWORD WINAPI transmissionTimeout(LPVOID n)
 			break;
 		}
 	}
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	displayStats
+--
+--	DATE:			December 11, 2018
+--
+--	REVISIONS:		December 11, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Alexander Song
+--
+--	INTERFACE:		DWORD WINAPI displayStats(LPVOID hwnd)
+--						LPVOID hwnd: void pointer to the handle of the window
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check and update the number of packets
+--    sent, bit error rate, number of ACKs received and number of NAKs received.
+--------------------------------------------------------------------------------------*/
+DWORD WINAPI displayStats(LPVOID hwnd)
+{
+	VariableManager& vm = VariableManager::getInstance();
+	const int char_height{ 15 };
+	const int char_width{ 8 };
+	HDC hdc;
+
+	while (1)
+	{
+		char ackStats[1024];
+		char nakStats[1024];
+		char packetStats[1024];
+		char berStats[1024];
+
+		sprintf_s(packetStats, "Packets sent: %d", vm.get_numPacketsSent());
+		sprintf_s(berStats, "Bit Error Rate: %0.4f", vm.get_BER());
+		sprintf_s(ackStats, "ACKs received: %d", vm.get_numACKReceived());
+		sprintf_s(nakStats, "NAKs received: %d", vm.get_numNAKReceived());
+
+		hdc = GetDC((HWND)hwnd);
+		TextOut(hdc, 0, 0, packetStats, strlen(packetStats));
+		TextOut(hdc, 0, char_height, berStats, strlen(berStats));
+		TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
+		TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
+		ReleaseDC((HWND)hwnd, hdc);
+
+		Sleep(500);
+	}
+	return 0;
+
 
 }

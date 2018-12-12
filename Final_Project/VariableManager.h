@@ -94,6 +94,18 @@ public:
 		return this->numFramesReSent >= MAX_RESENDS;
 	}
 
+	int get_numACKReceived() { return this->numACKReceived; }
+	void set_numACKReceived(int num) { this->numACKReceived = num; }
+
+	int get_numNAKReceived() { return this->numNAKReceived; }
+	void set_numNAKReceived(int num) { this->numNAKReceived = num; }
+
+	int get_numPacketsSent() { return this->numPacketsSent; }
+	void set_numPacketsSent(int num) { this->numPacketsSent = num;  }
+
+	double get_BER() { return this->bitErrorRate; }
+	void set_BER(double num) { this->bitErrorRate = num; }
+
 	void set_stopThreadEvent(HANDLE* stopThreadEvent) { this->stopThreadEvent = stopThreadEvent; }
 	HANDLE* get_stopThreadEvent() { return this->stopThreadEvent; }
 
@@ -102,6 +114,7 @@ public:
 
 	void set_stopTransmitTimeoutThreadEvent(HANDLE* stopTransmitTimeoutThreadEvent) { this->stopTransmitTimeoutThreadEvent = stopTransmitTimeoutThreadEvent; }
 	HANDLE* get_stopTransmitTimeoutThreadEvent() { return this->stopTransmitTimeoutThreadEvent; }
+
 
 	void set_nextFrameToReceive(char c) { this->nextFrameToReceive = c; }
 	char get_nextFrameToReceive() { return this->nextFrameToReceive; }
@@ -147,6 +160,11 @@ private:
 	bool hasSentEOT = false;
 
 	bool hitEOF = false;
+
+	int numACKReceived;
+	int numNAKReceived;
+	int numPacketsSent;
+	double bitErrorRate;
 
 	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
 	int countDataFrameBytesRead;

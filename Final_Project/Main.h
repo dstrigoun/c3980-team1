@@ -56,3 +56,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 void sendCharacter(HWND hwnd);
 
 void create_CTRL_frames();
+
+DWORD WINAPI displayStats(LPVOID hwnd);
+
+void initialDisplay();
