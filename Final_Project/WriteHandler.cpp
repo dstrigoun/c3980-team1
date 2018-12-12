@@ -6,6 +6,7 @@
 --	DATE:			November 24, 2018
 --
 --	REVISIONS:		November 24, 2018
+--                  December 11, 2018 - keep track of packets sent
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
@@ -21,6 +22,9 @@
 --------------------------------------------------------------------------------------*/
 void sendFrame(LPVOID writeParams)
 {
+	VariableManager &vm = VariableManager::getInstance();
+
+	vm.set_numPacketsSent(vm.get_numPacketsSent() + 1);
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 	

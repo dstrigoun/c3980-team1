@@ -48,14 +48,12 @@ using namespace std;
 DWORD idleTimeoutThreadId;
 DWORD eventHandlerThreadId;
 DWORD senderThreadId;
-DWORD displayThreadId;
 
 DWORD numBytesRead;
 
 HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
 HANDLE senderThrd;
-HANDLE displayThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 COMMCONFIG	cc;
@@ -65,6 +63,8 @@ char CurrentSendingCharArrKieran[1024];
 
 PREADTHREADPARAMS rtp;
 
+const int char_height{ 15 };
+const int char_width{ 8 };
 
 #pragma warning (disable: 4096)
 
@@ -156,7 +156,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
 	eventHandlerThrd = CreateThread(NULL, 0, pollForEvents, (LPVOID)rtp, 0, &eventHandlerThreadId);
-	displayThrd = CreateThread(NULL, 0, displayStats, vm.get_hwnd(), 0, &displayThreadId);
 
 	create_CTRL_frames();
 
@@ -165,7 +164,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
-
+	initialDisplay();
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
 		TranslateMessage(&Msg);
@@ -181,10 +180,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 --	DATE:			November 19, 2018
 --
 --	REVISIONS:		November 19, 2018
+--					December 11, 2018 - WM_PAINT case added
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Alexander Song
 --
 --	INTERFACE:		LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam,
 --											LPARAM lParam)
@@ -198,6 +198,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 	WPARAM wParam, LPARAM lParam)
 {
 	VariableManager& vm = VariableManager::getInstance();
+
+	HDC hdc;
+	PAINTSTRUCT paintstruct;
+	
 	switch (Message)
 	{
 	case WM_COMMAND:
@@ -206,7 +210,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		case IDM_UPLOAD:
 			debugMessage("Clicked upload");
 			if (vm.get_unfinishedTransmission()) {
-				MessageBox(hwnd, "file currenrtly uploading, please try again later", "sorry", MB_OK);
+				MessageBox(hwnd, "file currently uploading, please try again later", "sorry", MB_OK);
 			}
 			else {
 				ifstream* kieransTempButNotReallyTempUploadFile = new ifstream;
@@ -225,11 +229,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 			}
 
-
 			break;
 		}
 		break;
 
+	case WM_PAINT:
+		hdc = BeginPaint((HWND)hwnd, &paintstruct);
+		char ackStats[1024];
+		char nakStats[1024];
+		char packetStats[1024];
+		char berStats[1024];
+
+		TextOut(hdc, 0, 0, packetStats, strlen(packetStats));
+		TextOut(hdc, 0, char_height, berStats, strlen(berStats));
+		TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
+		TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
+		EndPaint((HWND)hwnd, &paintstruct); // Release DC
+		break;
 	case WM_DESTROY:	// Terminate program
 		debugMessage("Connected Terminated");
 		SetEvent(stopThreadEvent);
@@ -485,31 +501,42 @@ void create_CTRL_frames() {
 	vm.set_ENQ_frame(tempENQFrame);
 }
 
-DWORD WINAPI displayStats(LPVOID hwnd)
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	initialDisplay
+--
+--	DATE:			December 11, 2018
+--
+--	REVISIONS:		December 11, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Alexander Song
+--
+--	INTERFACE:		void initialDisplay()
+--
+--	RETURNS:		void
+--
+--	NOTES:
+--	Called when the program enters WinProc to display the initial statistics
+--------------------------------------------------------------------------------------*/
+void initialDisplay()
 {
 	VariableManager& vm = VariableManager::getInstance();
-	const int char_height{ 15 };
-	const int char_width{ 8 };
-	HDC hdc;
-	PAINTSTRUCT paintstruct;
-
-	vm.set_numACKReceived(0);
-
 	char ackStats[1024];
+	char nakStats[1024];
+	char packetStats[1024];
+	char berStats[1024];
+
+	sprintf_s(packetStats, "Packets sent: %d", vm.get_numPacketsSent());
+	sprintf_s(berStats, "Bit Error Rate: %0.4f", vm.get_BER());
 	sprintf_s(ackStats, "ACKs received: %d", vm.get_numACKReceived());
+	sprintf_s(nakStats, "NAKs received: %d", vm.get_numNAKReceived());
 
-	hdc = GetDC((HWND)hwnd);
-	TextOut(hdc, 0, 0, ackStats, strlen(ackStats));
-	ReleaseDC((HWND)hwnd, hdc);
+	HDC hdc = GetDC((HWND)vm.get_hwnd());
 
-	while (1)
-	{
-		sprintf_s(ackStats, "ACKs received: %d", vm.get_numACKReceived());
-
-		hdc = BeginPaint((HWND)hwnd, &paintstruct); // Acquire DC
-		TextOut(hdc, 0, 0, ackStats, strlen(ackStats)); // output character
-		EndPaint((HWND)hwnd, &paintstruct); // Release DC
-
-	}
-	return 0;
+	TextOut(hdc, 0, 0, packetStats, strlen(packetStats));
+	TextOut(hdc, 0, char_height, berStats, strlen(berStats));
+	TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
+	TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
+	ReleaseDC((HWND)vm.get_hwnd(), hdc);
 }

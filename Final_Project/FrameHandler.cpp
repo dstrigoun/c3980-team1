@@ -4,6 +4,8 @@
 
 DWORD timeoutThreadId;
 HANDLE hTimeoutThrd;
+HANDLE displayThrd;
+DWORD displayThreadId;
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveFrame
@@ -216,6 +218,8 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 --					November 26, 2018 - receive EOT and ENQ and update state
 --					November 28, 2018 - receive ACK when ENQ was sent and update state
 --					December 8th, 2018 - write debug messages to log file
+--					December 11th, 2018 - increment ACK and NAK received counts
+--												and added displayThrd
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
@@ -245,6 +249,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	// handle behaviour based on control char received
 
 	if (vm.get_curState() == "IDLE") {
+		displayThrd = CreateThread(NULL, 0, displayStats, vm.get_hwnd(), 0, &displayThreadId);
 
 		if (ctrlChar == EOT) {
 			vm.set_LAST_EOT(time(0));
@@ -267,7 +272,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
 			vm.set_curState("SEND");
 			vm.set_unfinishedTransmission(true);
-
+			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
 			//send the first data frame
 			
 			debugMessage("Sending payload");
@@ -282,6 +287,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		case EOT:
 			goToIdle();
 		case ACK:
+			vm.set_numACKReceived(vm.get_numACKReceived() + 1); // increment ACK count
 			if (vm.get_currUploadFile() == nullptr) {
 				vm.set_unfinishedTransmission(false);
 				goToIdle();
@@ -291,11 +297,10 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
 			//trigger send frame
 			debugMessage("Received ACK for Data Frame" + nextFrameToSend);
-			// increment ACK count
-			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
 			generateAndSendFrame(NULL, wp);
 			break;
 		case NAK:
+			vm.set_numNAKReceived(vm.get_numNAKReceived() + 1); // increment NAK count
 			//trigger resend frame
 			debugMessage("Received NAK for Data Frame. Triggering Resend");
 			//resendDataFrame(wp);
@@ -541,6 +546,56 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 		message << "Last data frame was " << difference << " seconds ago";
 		debugMessage(message.str());
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
+	}
+	return 0;
+}
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	displayStats
+--
+--	DATE:			December 11, 2018
+--
+--	REVISIONS:		December 11, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Alexander Song
+--
+--	INTERFACE:		DWORD WINAPI displayStats(LPVOID hwnd)
+--						LPVOID hwnd: void pointer to the handle of the window
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check and update the number of packets
+--    sent, bit error rate, number of ACKs received and number of NAKs received.
+--------------------------------------------------------------------------------------*/
+DWORD WINAPI displayStats(LPVOID hwnd)
+{
+	VariableManager& vm = VariableManager::getInstance();
+	const int char_height{ 15 };
+	const int char_width{ 8 };
+	HDC hdc;
+
+	while (1)
+	{
+		char ackStats[1024];
+		char nakStats[1024];
+		char packetStats[1024];
+		char berStats[1024];
+
+		sprintf_s(packetStats, "Packets sent: %d", vm.get_numPacketsSent());
+		sprintf_s(berStats, "Bit Error Rate: %0.4f", vm.get_BER());
+		sprintf_s(ackStats, "ACKs received: %d", vm.get_numACKReceived());
+		sprintf_s(nakStats, "NAKs received: %d", vm.get_numNAKReceived());
+
+		hdc = GetDC((HWND)hwnd);
+		TextOut(hdc, 0, 0, packetStats, strlen(packetStats));
+		TextOut(hdc, 0, char_height, berStats, strlen(berStats));
+		TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
+		TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
+		ReleaseDC((HWND)hwnd, hdc);
+		Sleep(500);
 	}
 	return 0;
 }

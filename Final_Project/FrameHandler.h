@@ -35,5 +35,7 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl);
 
 DWORD WINAPI receiveTimeout(LPVOID n);
 
+DWORD WINAPI displayStats(LPVOID hwnd);
+
 //boost::uint16_t buildCRC(const char* data);
 //bool checkCRC(const char* data, boost::uint16_t receivedCRC);
