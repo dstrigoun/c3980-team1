@@ -76,7 +76,6 @@ void resendDataFrame(LPVOID writeParams)
 		// send eot
 		goToIdle();
 	}
-
 }
 
 /*-------------------------------------------------------------------------------------

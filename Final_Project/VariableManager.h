@@ -26,6 +26,9 @@ public:
 	VariableManager(VariableManager const&) = delete;
 	void operator=(VariableManager const&) = delete;
 
+	void set_unfinishedTransmission(bool flag) { this->unfinishedTransmission= flag; }
+	bool get_unfinishedTransmission() { return this->unfinishedTransmission; }
+
 	void set_ENQ_FLAG(bool flag) { this->ENQ_FLAG = flag; }
 	bool get_ENQ_FLAG() { return this->ENQ_FLAG; }
 
@@ -93,6 +96,7 @@ public:
 private:
 	VariableManager() {}
 
+	bool unfinishedTransmission = false;
 	bool ENQ_FLAG = false;
 	HWND hwnd;
 	HANDLE portHandle;
