@@ -57,7 +57,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			if (vm.get_countDataFrameBytesRead() == 1024) {
 				vm.set_countDataFrameBytesRead(0);
 				if (vm.get_isDuplicate()) {
-					generateAndSendFrame(NAK, wp);
+					generateAndSendFrame(ACK, wp);
 					vm.set_isDuplicate(false);
 				}
 				else {
@@ -103,20 +103,22 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 	
 	char localCtlFrame[3] = {};
 	char localDataFrame[1024] = {};
-	(ctrl != NULL) ? generateCtrlFrame(localCtlFrame, ctrl)
-		: generateDataFrame(localDataFrame);
-	
-	(ctrl != NULL) ? wp->frameLen = 3 : wp->frameLen = 1024;
 	
 	if (ctrl != NULL) {
-		for (int i = 0; i < wp->frameLen; i++) {
+		wp->frameLen = 3;
+		wp->frame = localCtlFrame;
+		generateCtrlFrame(localCtlFrame, ctrl);
+		/*for (int i = 0; i < wp->frameLen; i++) {
 			wp->frame[i] = localCtlFrame[i];
-		}
+		}*/
 	}
 	else {
-		for (int i = 0; i < wp->frameLen; i++) {
+		wp->frameLen = 1024;
+		wp->frame = localDataFrame;
+		generateDataFrame(localDataFrame);
+		/*for (int i = 0; i < wp->frameLen; i++) {
 			wp->frame[i] = localDataFrame[i];
-		}
+		}*/
 	}
 	sendFrame(wp);
 
@@ -148,24 +150,27 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 --------------------------------------------------------------------------------------*/
 void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
 	VariableManager &vm = VariableManager::getInstance();
-
+	bool isCrcGood = false;
 	if (frame[1] == DC1 || frame[1] == DC2) {
 		if (frame[1] != vm.get_nextFrameToReceive()) { //tempeoaraliy made this always fail
 			//duplicate frame 
-			debugMessage("Received Duplicate; Triggering Resend");
+			debugMessage("Received Duplicate");
 			vm.set_isDuplicate(true);
 		}
 		else {
 			vm.set_isDuplicate(false);
 		}
-	}
-	
-	else {
-		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
-		//check for dummy CRC bit
-		if (frame[1023] == 1) {
+		
+		std::uint8_t crc = CRC::Calculate(frame + 2, 1022, CRC::CRC_8());
+		isCrcGood = !crc;
+		if (isCrcGood) {
 			debugMessage("CRC bit is correct");
 		}
+		else {
+			debugMessage("CRC Bad; Triggering Resend");
+			generateAndSendFrame(NAK, wp);
+		}
+		
 
 		// CRC code that does not work
 		//-----------------------------------------------------
@@ -193,19 +198,19 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 				data[i] = frame[i];
 			}
 		}
-		
+
 		// Check for EOF (-1) in the data
 		//int data_size = sizeof(data) / sizeof(*data);
 		int data_size = 0;
 		if (firstPartOfFrame) {
-			data_size = numBytesRead -2;
+			data_size = numBytesRead - 2;
 		}
 		else {
 			data_size = numBytesRead;
 		}
-	
+
 		std::ofstream file;
-		if (!vm.get_isDuplicate()) {
+		if (!vm.get_isDuplicate() && isCrcGood) {
 			file.open("receive_data.txt", std::fstream::app);
 			for (int i = 0; i < data_size; i++) {
 				file << data[i];
@@ -258,11 +263,17 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
 	debugMessage("ENQ_FLAG: " + tempENQ);
 
-	std::stringstream message;
-	message << "Received Frame: " << (LPSTR)frame << std::endl;
-	debugMessage(message.str());
-	// handle behaviour based on control char received
 
+	char *temp = new char[4];
+	strncpy_s(temp, 4, frame, 3);
+
+	std::stringstream message;
+	message << "Received Frame: " << (LPSTR)temp << std::endl;
+	debugMessage(message.str());
+	
+	delete [] temp;
+
+	// handle behaviour based on control char received
 	if (vm.get_curState() == "IDLE") {
 		displayThrd = CreateThread(NULL, 0, displayStats, vm.get_hwnd(), 0, &displayThreadId);
 
@@ -306,6 +317,10 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			vm.set_numACKReceived(vm.get_numACKReceived() + 1); // increment ACK count
 			if (vm.get_hitEOF()) {
 				vm.set_unfinishedTransmission(false);
+				wp->frame = vm.get_EOT_frame();
+				wp->frameLen = 3;
+				sendFrame(wp);
+				vm.set_hasSentEOT(true);
 				goToIdle();
 				vm.get_currUploadFile()->close();
 				vm.set_currUploadFile(nullptr);
@@ -401,11 +416,11 @@ void generateDataFrame(char* dataFrame) {
 		vm.get_lastFrameSent()[i] = localData[i];
 	}
 
-	//append the dummy CRC bit
-	char dummyCRC = 1;
-	dataFrame[1023] = dummyCRC;
-	vm.get_lastFrameSent()[1023] = dummyCRC;
-	debugMessage("Generated CRC bit is: " + dummyCRC);
+	//append the CRC bit
+	std::uint8_t crc = CRC::Calculate(dataFrame + 2, 1021, CRC::CRC_8());
+	dataFrame[1023] = crc;
+	vm.get_lastFrameSent()[1023] = crc;
+	debugMessage("Generated CRC bit is: " + crc);
 
 	// CRC code that does not work
 	//------------------------------------------------------
@@ -418,11 +433,6 @@ void generateDataFrame(char* dataFrame) {
 
 	//strcat_s(dataFrame, 1021, msgbuf);
 	//-------------------------------------------------------
-
-	//should set lastFrameSent here 
-
-	//vm.set_lastFrameSent(dataFrame);
-	//vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
 
 }
 
@@ -563,6 +573,7 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 		debugMessage(message.str());
 		Sleep(CHECK_IDLE_TIMEOUT_MS);
 	}
+	ExitThread(0);
 	return 0;
 }
 
@@ -574,7 +585,7 @@ DWORD WINAPI transmissionTimeout(LPVOID n)
 
 	DWORD waitResult;
 
-	while (1) {
+	while (vm.get_curState() != "RECEIVE") {
 		waitResult = WaitForSingleObject(*(vm.get_stopTransmitTimeoutThreadEvent()), 10);
 		switch (waitResult)
 		{
@@ -593,6 +604,8 @@ DWORD WINAPI transmissionTimeout(LPVOID n)
 			break;
 		}
 	}
+	ExitThread(0);
+	return 0;
 }
 
 /*-------------------------------------------------------------------------------------

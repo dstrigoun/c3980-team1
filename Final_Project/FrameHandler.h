@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 //#include <boost/crc.hpp>
+#include "CRC.h"
 #include "Main.h"
 #include "WriteParams.h"
 #include "ReadThreadParams.h"

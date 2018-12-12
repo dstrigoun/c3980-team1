@@ -109,15 +109,13 @@ DWORD WINAPI sendEOTs(LPVOID n)
 	//WriteParams wppp = sep->wp;
 
 	DWORD waitResult;
-	sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
+	//sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
 
 	do {
 		waitResult = WaitForSingleObject(*(vm.get_stopEOTThreadEvent()), 500);	
 		
 		switch (waitResult) {
 		case WAIT_TIMEOUT:
-			debugMessage("case timeout");
-
 			sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
 
 			break;
@@ -128,6 +126,7 @@ DWORD WINAPI sendEOTs(LPVOID n)
 		default:
 			;
 		}
-	} while (1);
-	
+	} while (vm.get_curState() == "IDLE");
+	ExitThread(0);
+	return 0;
 }

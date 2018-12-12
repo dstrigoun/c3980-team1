@@ -8,6 +8,7 @@
 #include <atlbase.h>
 #include <AtlConv.h>
 
+#include <random>
 #include <windows.h>
 #include <stdio.h>
 #include <time.h>
