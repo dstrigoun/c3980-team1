@@ -31,7 +31,6 @@ void readFromPort(PREADTHREADPARAMS readTP) {
 	}
 	else {
 		if (*(readTP->numBytesRead) > 0) {
-			debugMessage("NumBytesRead: " + *(readTP->numBytesRead));
 			receiveFrame(readStr, readTP);
 		}
 	}

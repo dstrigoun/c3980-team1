@@ -55,6 +55,10 @@ public:
 	void set_LAST_DATA(time_t current) { this->LAST_DATA_FRAME_RECEIVED = current; }
 	DWORD get_LAST_DATA() { return this->LAST_DATA_FRAME_RECEIVED; }
 
+	void set_LAST_TRANSMISSION(time_t current) { this->LAST_TRANSMISSION = current; }
+	DWORD get_LAST_TRANSMISSION() { return this->LAST_TRANSMISSION; }
+
+
 	void set_EOT_frame(char* frame) { this->EOT_frame = frame; }
 	char* get_EOT_frame() { return this->EOT_frame; }
 
@@ -78,17 +82,26 @@ public:
 	}
 	int get_countDataFrameBytesRead() { return countDataFrameBytesRead; }
 
-	void set_lastFrameSent(LPCSTR lastFrame) {
-		this->lastFrameSent = lastFrame;
+	void set_lastFrameSent(char* lastFrame) {
+		//strcpy_s(this->lastFrameSent, lastFrame);
 	}
-	LPCSTR get_lastFrameSent(){ return this->lastFrameSent; }
+	char* get_lastFrameSent(){ return this->lastFrameSent; }
 
 	bool isMaxFramesSent() {
 		return this->numFramesSent >= MAX_FRAMES_SENT;
 	}
 	bool isMaxResends() {
-		return this->numFramesReSent >= MAX_RESENDS;
+		return this->numFramesReSent > MAX_RESENDS;
 	}
+
+	void set_nextFrameToReceive(char c) { this->nextFrameToReceive = c; }
+	char get_nextFrameToReceive() { return this->nextFrameToReceive; }
+
+	void set_nextFrameToSend(char c) { this->nextFrameToSend = c; }
+	char get_nextFrameToSend() { return this->nextFrameToSend; }
+
+	void set_isDuplicate(bool b) { this->isDuplicate = b; }
+	bool get_isDuplicate() { return this->isDuplicate; }
 
 private:
 	VariableManager() {}
@@ -102,9 +115,13 @@ private:
 	int numFramesReSent;
 	DWORD LAST_EOT_RECEIVED;
 	DWORD LAST_DATA_FRAME_RECEIVED;
-	LPCSTR lastFrameSent;
+	DWORD LAST_TRANSMISSION;
+	char lastFrameSent[1024];
 	const int MAX_RESENDS = 3;
 	const int MAX_FRAMES_SENT = 10;
+	char nextFrameToReceive = 17;
+	char nextFrameToSend = 17;
+	bool isDuplicate = false;
 
 	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
 	int countDataFrameBytesRead;
