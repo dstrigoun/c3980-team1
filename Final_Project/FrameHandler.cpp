@@ -150,7 +150,7 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 --------------------------------------------------------------------------------------*/
 void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
 	VariableManager &vm = VariableManager::getInstance();
-	bool isCrcGood = false;
+	
 	if (frame[1] == DC1 || frame[1] == DC2) {
 		if (frame[1] != vm.get_nextFrameToReceive()) { //tempeoaraliy made this always fail
 			//duplicate frame 
@@ -162,14 +162,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 		}
 		
 		std::uint8_t crc = CRC::Calculate(frame + 2, 1022, CRC::CRC_8());
-		isCrcGood = !crc;
-		if (isCrcGood) {
-			debugMessage("CRC bit is correct");
-		}
-		else {
-			debugMessage("CRC Bad; Triggering Resend");
-			generateAndSendFrame(NAK, wp);
-		}
 		
 
 		// CRC code that does not work

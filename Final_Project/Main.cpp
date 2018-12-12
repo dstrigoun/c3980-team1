@@ -59,7 +59,7 @@ HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 HANDLE stopEOTThreadEvent = CreateEventA(NULL, false, false, "stopEOTTheadEvent");
 HANDLE stopTransmitTimeoutThread = CreateEventA(NULL, false, false, "stopTransmitTimeoutThread");
 COMMCONFIG	cc;
-LPCSTR lpszCommName = "com2";
+LPCSTR lpszCommName = "com1";
 char str[80] = "";
 char CurrentSendingCharArrKieran[1024];
 
@@ -314,10 +314,10 @@ void goToIdle()
 
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)sep, 0, &senderThreadId);
 
-	//if (previous_state == "SEND")
-	//{
+	if (previous_state == "SEND")
+	{
 		triggerRandomWait();
-	//}
+	}
 	
 	// check to see if there's data
 	if (vm.get_unfinishedTransmission()) {
