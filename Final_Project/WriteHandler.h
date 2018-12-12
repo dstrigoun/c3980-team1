@@ -14,7 +14,7 @@ void sendCtrlFrame(LPVOID writeParams);
 
 void sendDataFrame(LPVOID writeParams);
 
-void resendDataFrame(LPVOID writeParams);
+void resendDataFrame();
 
 void sendFrame(LPVOID writeParams);
 

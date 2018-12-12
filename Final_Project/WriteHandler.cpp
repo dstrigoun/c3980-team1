@@ -54,27 +54,23 @@ void sendDataFrame(LPVOID writeParams)
 		debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
 	}
 	else {
-		// end transmission
-		// send eot
+		debugMessage("Reached Max Number of Frames Sent");
 		goToIdle();
 	}
 }
 
-void resendDataFrame(LPVOID writeParams)
+void resendDataFrame()
 {
+
 	VariableManager &vm = VariableManager::getInstance();
-	PWriteParams wp;
-	wp = PWriteParams(writeParams);
-	if (vm.isMaxResends()) {
+
+	if (!vm.isMaxResends()) {
 		sendFrameToPort( (char*)vm.get_lastFrameSent(), 1024);
 		vm.increment_numFramesReSent();
-
-		debugMessage("Received NAK for DataFrame");
 		debugMessage("Number of resends: " + to_string(vm.get_numFramesReSent()));
 	}
 	else {
-		// end transmission
-		// send eot
+		debugMessage("Reached Max Number of Resends");
 		goToIdle();
 	}
 }

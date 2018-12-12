@@ -214,7 +214,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				wp->frame = CurrentSendingCharArrKieran;
 				vm.set_unfinishedTransmission(true);
 				vm.set_ENQ_FLAG(true);
-
+				vm.set_nextFrameToSend(DC1);
 				generateAndSendFrame(ENQ, wp);
 				vm.reset_numFramesSent();
 				vm.reset_numFramesReSent();
