@@ -1,4 +1,5 @@
 #include "WriteHandler.h"
+#include "sendEOTParams.h"
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	sendFrame
@@ -97,21 +98,45 @@ void resendDataFrame(LPVOID writeParams)
 --	NOTES:
 --	Pass this thread function to Sender thread to send out a frame
 --------------------------------------------------------------------------------------*/
-DWORD WINAPI sendEOTs(LPVOID writeParams)
+DWORD WINAPI sendEOTs(LPVOID n)
 {
+	debugMessage("Creating EOT thread");
 
 	VariableManager &vm = VariableManager::getInstance();
 
-	PWriteParams write_params;
-	write_params = PWriteParams(writeParams);
+	PsendEOTParams sep;
+	sep = (PsendEOTParams)n;
+
+	//WriteParams wppp = sep->wp;
+
+	DWORD waitResult;
+	debugMessage("Before the loop");
+	sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
+
 
 	do {
-		sendFrameToPort(write_params->frame, write_params->frameLen);
+		waitResult = WaitForSingleObject(sep->stopThreadEvent, 5000);	
+		debugMessage("After wait result");
 
-		debugMessage("Send EOT");
+		switch (waitResult) {
+		case WAIT_TIMEOUT:
+			debugMessage("case timeout");
 
-		Sleep(5000);
-	} while (vm.get_curState() == "IDLE");
+			sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
+
+			debugMessage("Send EOT");
+
+			break;
+		case WAIT_OBJECT_0:
+			debugMessage("Ending the eot thread");
+			ExitThread(0);
+		default:
+			;
+		}
+		
+
+		//Sleep(5000);
+	} while (1);//while (vm.get_curState() == "IDLE");
+
 	
-	return 0;
 }

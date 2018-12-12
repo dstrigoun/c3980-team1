@@ -90,6 +90,9 @@ public:
 		return this->numFramesReSent >= MAX_RESENDS;
 	}
 
+	void set_stopThreadEvent(HANDLE stopThreadEvent) { this->stopThreadEvent = stopThreadEvent; }
+	HANDLE get_stopThreadEvent() { return this->stopThreadEvent; }
+
 private:
 	VariableManager() {}
 
@@ -97,6 +100,7 @@ private:
 	bool ENQ_FLAG = false;
 	HWND hwnd;
 	HANDLE portHandle;
+	HANDLE stopThreadEvent;
 	std::string curState;
 	int numFramesSent;
 	int numFramesReSent;

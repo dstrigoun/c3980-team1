@@ -33,6 +33,7 @@
 
 #include "Menu.h"
 #include "Main.h"
+#include "sendEOTParams.h"
 
 #define STRICT_TYPED_ITEMIDS
 #include <fstream>
@@ -114,6 +115,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	VariableManager& vm = VariableManager::getInstance();
 	vm.set_curState("IDLE");
 	vm.set_countDataFrameBytesRead(0);
+	vm.set_stopThreadEvent(stopThreadEvent);
 
 	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		600, 400, NULL, NULL, hInst, NULL);
@@ -157,10 +159,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	create_CTRL_frames();
 
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
-
+	WriteParams wp(vm.get_EOT_frame(), frameLen);
+	PsendEOTParams sep = new sendEOTParams(stopThreadEvent, &wp);
 	
-	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)sep, 0, &senderThreadId);
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -262,14 +264,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 void goToIdle()
 {
 	VariableManager& vm = VariableManager::getInstance();
-	if (vm.get_curState() == "SEND")
-	{
-		triggerRandomWait();
-	}
+
+	std::string previous_state = (vm.get_curState() == "SEND") ? "SEND" : "RECEIVE";
 	vm.set_curState("IDLE");
 
 	debugMessage("Current State: " + vm.get_curState());
 	vm.set_ENQ_FLAG(false);
+
+	vm.set_LAST_EOT(time(0));
+	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+
+	debugMessage("IDLE timeout created, starting to send EOTs");
+
+	std::stringstream message;
+	message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
+	debugMessage(message.str());
+
+	size_t frameLen = 3;
+	PWriteParams wps = new WriteParams(vm.get_EOT_frame(), frameLen);
+	PsendEOTParams sep = new sendEOTParams(stopThreadEvent, wps);
+
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)sep, 0, &senderThreadId);
+
+	if (previous_state == "SEND")
+	{
+		triggerRandomWait();
+	}
+	
 
 	// check to see if there's data
 	if (vm.get_unfinishedTransmission()) {
@@ -278,23 +299,6 @@ void goToIdle()
 		wp->frameLen = 3;
 		sendFrame(wp);
 		vm.set_ENQ_FLAG(true);
-	}
-	else {
-		triggerRandomWait();
-
-		vm.set_LAST_EOT(time(0));
-		hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
-
-		debugMessage("IDLE timeout created, starting to send EOTs");
-
-		std::stringstream message;
-		message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
-		debugMessage(message.str());
-
-		size_t frameLen = 3;
-		PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
-
-		senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 	}
 }
 
