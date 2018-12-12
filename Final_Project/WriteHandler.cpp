@@ -106,8 +106,6 @@ DWORD WINAPI sendEOTs(LPVOID n)
 	PsendEOTParams sep;
 	sep = (PsendEOTParams)n;
 
-	//WriteParams wppp = sep->wp;
-
 	DWORD waitResult;
 	sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
 
