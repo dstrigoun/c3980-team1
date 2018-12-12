@@ -132,7 +132,6 @@ std::ifstream openFile(HWND *hWnd)
 	return hFile;
 }
 
-<<<<<<< HEAD
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	    getPayload
@@ -153,8 +152,6 @@ std::ifstream openFile(HWND *hWnd)
 --	NOTES:          If there are not 1021 characters left in the file stream, then the remaining will be padded with DC4
 --
 --------------------------------------------------------------------------------------*/
-=======
->>>>>>> develop
 char* getPayload() {
 
 	VariableManager &vm = VariableManager::getInstance();
@@ -163,12 +160,6 @@ char* getPayload() {
 	}
 	ifstream* currFile = vm.get_currUploadFile();
 
-<<<<<<< HEAD
-=======
-	std::ofstream file;
-	file.open("log.txt", std::fstream::app);
-	file.close();
->>>>>>> develop
 	char* payload = new char[NUM_PAYLOAD_BYTES + 1];
 	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
 		payload[i] = DC4;
