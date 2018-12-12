@@ -202,7 +202,7 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 		}
 
 		std::ofstream file;
-		if (!vm.get_isDuplicate() && isCrcGood) {
+		if (!vm.get_isDuplicate()) {
 			file.open("receive_data.txt", std::fstream::app);
 			for (int i = 0; i < data_size; i++) {
 				file << data[i];
