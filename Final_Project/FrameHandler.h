@@ -3,7 +3,6 @@
 #include <fstream>
 #include <stdio.h>
 #include <string.h>
-//#include <boost/crc.hpp>
 #include "CRC.h"
 #include "Main.h"
 #include "WriteParams.h"
@@ -34,6 +33,3 @@ DWORD WINAPI receiveTimeout(LPVOID n);
 DWORD WINAPI transmissionTimeout(LPVOID n);
 
 DWORD WINAPI displayStats(LPVOID hwnd);
-
-//boost::uint16_t buildCRC(const char* data);
-//bool checkCRC(const char* data, boost::uint16_t receivedCRC);

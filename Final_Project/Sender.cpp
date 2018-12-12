@@ -44,7 +44,6 @@ void sendFrameToPort(char* frame, size_t frameLen) {
 			(LPTSTR)&lpMsgBuf,
 			0, NULL);
 
-		//debugMessage((LPSTR)lpMsgBuf);
 		debugMessage("Write File failed");
 	}
 	
