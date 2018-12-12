@@ -57,6 +57,7 @@ HANDLE eventHandlerThrd;
 HANDLE senderThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
+HANDLE stopEOTThreadEvent = CreateEventA(NULL, false, false, "stopEOTTheadEvent");
 COMMCONFIG	cc;
 LPCSTR lpszCommName = "com1";
 char str[80] = "";
@@ -115,7 +116,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	VariableManager& vm = VariableManager::getInstance();
 	vm.set_curState("IDLE");
 	vm.set_countDataFrameBytesRead(0);
-	vm.set_stopThreadEvent(stopThreadEvent);
+	vm.set_stopThreadEvent(&stopThreadEvent);
+	vm.set_stopEOTThreadEvent(&stopEOTThreadEvent);
 
 	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		600, 400, NULL, NULL, hInst, NULL);
@@ -160,7 +162,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 
 	size_t frameLen = 3;
 	WriteParams wp(vm.get_EOT_frame(), frameLen);
-	PsendEOTParams sep = new sendEOTParams(stopThreadEvent, &wp);
+	PsendEOTParams sep = new sendEOTParams(stopEOTThreadEvent, &wp);
 	
 	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)sep, 0, &senderThreadId);
 
@@ -215,6 +217,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				vm.set_unfinishedTransmission(true);
 				vm.set_ENQ_FLAG(true);
 				vm.set_nextFrameToSend(DC1);
+				SetEvent(*(vm.get_stopEOTThreadEvent()));
 				generateAndSendFrame(ENQ, wp);
 				vm.reset_numFramesSent();
 				vm.reset_numFramesReSent();
@@ -230,7 +233,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 	case WM_DESTROY:	// Terminate program
 		debugMessage("Connected Terminated");
-		SetEvent(stopThreadEvent);
+		//SetEvent(stopThreadEvent);
 		CloseHandle(hIdleTimeoutThrd);
 		CloseHandle(eventHandlerThrd);
 		CloseHandle(senderThrd);
@@ -295,6 +298,7 @@ void goToIdle()
 	// check to see if there's data
 	if (vm.get_unfinishedTransmission()) {
 		debugMessage("Buffer not empty yet, sending ENQ to bid for line");
+		SetEvent(*(vm.get_stopEOTThreadEvent()));
 		wp->frame = vm.get_ENQ_frame();
 		wp->frameLen = 3;
 		sendFrame(wp);
@@ -440,7 +444,7 @@ void terminateProgram()
 {
 	MessageBox(NULL, "Lost connection.", "", MB_OK);
 	debugMessage("Lost Connection");
-	SetEvent(stopThreadEvent);
+	//SetEvent(stopThreadEvent);
 	CloseHandle(hIdleTimeoutThrd);
 	CloseHandle(eventHandlerThrd);
 	CloseHandle(senderThrd);

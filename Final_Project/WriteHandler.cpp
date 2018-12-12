@@ -111,7 +111,7 @@ DWORD WINAPI sendEOTs(LPVOID n)
 
 
 	do {
-		waitResult = WaitForSingleObject(sep->stopThreadEvent, 5000);	
+		waitResult = WaitForSingleObject(*(vm.get_stopEOTThreadEvent()), 5000);	
 		debugMessage("After wait result");
 
 		switch (waitResult) {

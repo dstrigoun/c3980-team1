@@ -94,8 +94,12 @@ public:
 		return this->numFramesReSent > MAX_RESENDS;
 	}
 
-	void set_stopThreadEvent(HANDLE stopThreadEvent) { this->stopThreadEvent = stopThreadEvent; }
-	HANDLE get_stopThreadEvent() { return this->stopThreadEvent; }
+	void set_stopThreadEvent(HANDLE* stopThreadEvent) { this->stopThreadEvent = stopThreadEvent; }
+	HANDLE* get_stopThreadEvent() { return this->stopThreadEvent; }
+
+	void set_stopEOTThreadEvent(HANDLE* stopEOTThreadEvent) { this->stopEOTThreadEvent = stopEOTThreadEvent; }
+	HANDLE* get_stopEOTThreadEvent() { return this->stopEOTThreadEvent; }
+
 	void set_nextFrameToReceive(char c) { this->nextFrameToReceive = c; }
 	char get_nextFrameToReceive() { return this->nextFrameToReceive; }
 
@@ -112,7 +116,8 @@ private:
 	bool ENQ_FLAG = false;
 	HWND hwnd;
 	HANDLE portHandle;
-	HANDLE stopThreadEvent;
+	HANDLE* stopThreadEvent;
+	HANDLE* stopEOTThreadEvent;
 	std::string curState;
 	int numFramesSent;
 	int numFramesReSent;

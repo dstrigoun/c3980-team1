@@ -279,7 +279,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			generateAndSendFrame( ACK, wp);
 
-			SetEvent(vm.get_stopThreadEvent());
+			SetEvent(*(vm.get_stopEOTThreadEvent()));
 			vm.set_curState("RECEIVE");
 			debugMessage("curState is now RECEIVE");
 
@@ -288,7 +288,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
-			SetEvent(vm.get_stopThreadEvent());
+			//SetEvent(*(vm.get_stopEOTThreadEvent()));
 			vm.set_curState("SEND");
 			vm.set_unfinishedTransmission(true);
 
