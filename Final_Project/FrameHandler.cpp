@@ -38,8 +38,15 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		readDataFrame(frame, *(rtp->numBytesRead), false);
 		if (vm.get_countDataFrameBytesRead() == 1024) {
 			vm.set_countDataFrameBytesRead(0);
-			generateAndSendFrame(ACK, wp);
-			debugMessage("Received entire frame, Sending ACK");
+			debugMessage("Received entire frame");
+			if (vm.get_isDuplicate()) {
+				generateAndSendFrame(NAK, wp);
+				vm.set_isDuplicate(false);
+			}
+			else {
+				vm.set_nextFrameToReceive((vm.get_nextFrameToReceive() == DC1) ? DC2 : DC1);
+				generateAndSendFrame(ACK, wp);
+			}
 		}
 	}
 	// check type of frame
@@ -50,8 +57,15 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			readDataFrame(frame, *(rtp->numBytesRead), true);
 			if (vm.get_countDataFrameBytesRead() == 1024) {
 				vm.set_countDataFrameBytesRead(0);
-				generateAndSendFrame(ACK, wp);
-				//debugMessage("Received entire frame, Sending ACK");
+				debugMessage("Received entire frame");
+				if (vm.get_isDuplicate()) {
+					generateAndSendFrame(NAK, wp);
+					vm.set_isDuplicate(false);
+				}
+				else {
+					vm.set_nextFrameToReceive((frame[1] == DC1) ? DC2 : DC1);
+					generateAndSendFrame(ACK, wp);
+				}
 			}
 		}
 		else {
@@ -141,13 +155,22 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 --	Call this to read a data frame and handle the data retrieved from the frame
 --------------------------------------------------------------------------------------*/
 void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame) {
-	if (false /*frame[1] != nextFrameToReceive*/) { //tempeoaraliy made this always fail
-		//duplicate frame 
+	VariableManager &vm = VariableManager::getInstance();
+
+	if (frame[1] == DC1 || frame[1] == DC2) {
+		if (frame[1] != vm.get_nextFrameToReceive()) { //tempeoaraliy made this always fail
+			//duplicate frame 
+			debugMessage("Received Duplicate; Triggering Resend");
+			vm.set_isDuplicate(true);
+		}
+		else {
+			vm.set_isDuplicate(false);
+		}
 	}
+	
 	else {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
-		nextFrameToReceive = (frame[1] == DC1) ? DC2 : DC1;
-		debugMessage("Next Frame to Receive: " + nextFrameToReceive);
+		debugMessage("Next Frame to Receive: " + vm.get_nextFrameToReceive());
 		//check for dummy CRC bit
 		if (frame[1023] == 1) {
 			debugMessage("CRC bit is correct");
@@ -189,22 +212,21 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 		else {
 			data_size = numBytesRead;
 		}
-
+	
 		std::ofstream file;
-		file.open("receive_data.txt", std::fstream::app);
-		for (int i = 0; i < data_size; i++) {
-			file << data[i];
-			//log_file << data[i];
-			if (data[i] == -1) {
-				debugMessage("Reached EOF in data");
-				VariableManager& vm = VariableManager::getInstance();
-				vm.set_unfinishedTransmission(false);
-				data_size = i;
-				break;
+		if (!vm.get_isDuplicate()) {
+			file.open("receive_data.txt", std::fstream::app);
+			for (int i = 0; i < data_size; i++) {
+				file << data[i];
+				if (data[i] == -1) {
+					debugMessage("Reached EOF in data");
+					vm.set_unfinishedTransmission(false);
+					data_size = i;
+					break;
+				}
 			}
+			file.close();
 		}
-		file.close();
-		VariableManager &vm = VariableManager::getInstance();
 		vm.set_LAST_DATA(time(0));
 	}
 }
@@ -274,8 +296,9 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			vm.set_unfinishedTransmission(true);
 			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
 			//send the first data frame
-			
+
 			debugMessage("Sending payload");
+			//send the first data frame
 			generateAndSendFrame(NULL, wp);
 			
 		}
@@ -294,16 +317,16 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 				break;
 			}
 			//update DC1/DC2
-			(nextFrameToSend == DC1) ? nextFrameToSend = DC2 : nextFrameToSend = DC1;
+			vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
 			//trigger send frame
-			debugMessage("Received ACK for Data Frame" + nextFrameToSend);
+			debugMessage("Received ACK for Data Frame");
 			generateAndSendFrame(NULL, wp);
 			break;
 		case NAK:
 			vm.set_numNAKReceived(vm.get_numNAKReceived() + 1); // increment NAK count
 			//trigger resend frame
 			debugMessage("Received NAK for Data Frame. Triggering Resend");
-			//resendDataFrame(wp);
+			resendDataFrame();
 			break;
 		}
 	}
@@ -334,6 +357,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			generateAndSendFrame( ACK, wp);
 
 		}*/
+
 		if (ctrlChar == EOT)
 		{
 			goToIdle();
@@ -371,14 +395,12 @@ void generateDataFrame(char* dataFrame) {
 
 	VariableManager &vm = VariableManager::getInstance();
 
-	//vm.set_lastFrameSent(getPayload());
-
 	char localData[1024] = {};
 	*localData = *dataFrame;
 	char* data = (char*)getPayload();
 
 	localData[0] = SYN;
-	localData[1] = nextFrameToSend;
+	localData[1] = vm.get_nextFrameToSend();
 
 	// copy data into local data frame
 	for (int i = 0; i < 1021; i++) {
@@ -388,12 +410,13 @@ void generateDataFrame(char* dataFrame) {
 	// copy local data frame into data frame
 	for (int i = 0; i < 1024; i++) {
 		dataFrame[i] = localData[i];
+		vm.get_lastFrameSent()[i] = localData[i];
 	}
 
 	//append the dummy CRC bit
 	char dummyCRC = 1;
 	dataFrame[1023] = dummyCRC;
-
+	vm.get_lastFrameSent()[1023] = dummyCRC;
 	debugMessage("Generated CRC bit is: " + dummyCRC);
 
 	// CRC code that does not work
@@ -410,7 +433,9 @@ void generateDataFrame(char* dataFrame) {
 
 	//should set lastFrameSent here 
 
-	nextFrameToSend = (nextFrameToSend == DC1) ? DC2 : DC1;
+	//vm.set_lastFrameSent(dataFrame);
+	//vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
+
 }
 
 /*-------------------------------------------------------------------------------------
@@ -437,9 +462,12 @@ void generateDataFrame(char* dataFrame) {
 --	SYN | CTRL | DC1/2
 --------------------------------------------------------------------------------------*/
 void generateCtrlFrame(char* ctrlFrame, char ctrl) {
+
+	VariableManager &vm = VariableManager::getInstance();
+
 	ctrlFrame[0] = SYN;
 	ctrlFrame[1] = ctrl;
-	ctrlFrame[2] = nextFrameToSend;
+	ctrlFrame[2] = vm.get_nextFrameToSend();
 
 	std::stringstream message;
 	message << "Generate CTRL frame: " << (LPSTR)ctrlFrame << std::endl;
@@ -550,6 +578,25 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 	return 0;
 }
 
+DWORD WINAPI transmissionTimeout(LPVOID n)
+{
+	VariableManager& vm = VariableManager::getInstance();
+	time_t currentTime = time(0);
+	while (currentTime - vm.get_LAST_TRANSMISSION()) {
+		currentTime = time(0);
+		if (currentTime - vm.get_LAST_TRANSMISSION() > RETRANSMISSION_TIMEOUT_TIME_S)
+		{
+			goToIdle();
+		}
+		int difference = currentTime - vm.get_LAST_TRANSMISSION();
+		std::stringstream message;
+		message << "Last Transmission " << difference << " seconds ago";
+		debugMessage(message.str());
+		Sleep(500);
+	}
+	return 0;
+}
+
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	displayStats
 --
@@ -595,7 +642,7 @@ DWORD WINAPI displayStats(LPVOID hwnd)
 		TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
 		TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
 		ReleaseDC((HWND)hwnd, hdc);
-		Sleep(500);
-	}
-	return 0;
+    Sleep(500);
+  }
+  return 0;
 }
