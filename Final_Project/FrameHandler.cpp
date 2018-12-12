@@ -76,7 +76,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 }
 
 /*-------------------------------------------------------------------------------------
---	FUNCTION:	generateFrame
+--	FUNCTION:	generateAndSendFrame
 --
 --	DATE:			November 24, 2018
 --
@@ -87,7 +87,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --
 --	PROGRAMMER:		Jason Kim, Dasha Strigoun
 --
---	INTERFACE:		void generateFrame(const char* data, char ctrl, PWriteParams wp)
+--	INTERFACE:		void generateAndSendFrame(char ctrl, PWriteParams wp)
 --						const char* data - data to send
 --						char ctrl - control character to send
 --						PWriteParams wp - struct with frame to be written
@@ -108,17 +108,11 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 		wp->frameLen = 3;
 		wp->frame = localCtlFrame;
 		generateCtrlFrame(localCtlFrame, ctrl);
-		/*for (int i = 0; i < wp->frameLen; i++) {
-			wp->frame[i] = localCtlFrame[i];
-		}*/
 	}
 	else {
 		wp->frameLen = 1024;
 		wp->frame = localDataFrame;
 		generateDataFrame(localDataFrame);
-		/*for (int i = 0; i < wp->frameLen; i++) {
-			wp->frame[i] = localDataFrame[i];
-		}*/
 	}
 	sendFrame(wp);
 
