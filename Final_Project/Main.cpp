@@ -33,6 +33,7 @@
 
 #include "Menu.h"
 #include "Main.h"
+#include "sendEOTParams.h"
 
 #define STRICT_TYPED_ITEMIDS
 #include <fstream>
@@ -55,6 +56,8 @@ HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
+HANDLE stopEOTThreadEvent = CreateEventA(NULL, false, false, "stopEOTTheadEvent");
+HANDLE stopTransmitTimeoutThread = CreateEventA(NULL, false, false, "stopTransmitTimeoutThread");
 COMMCONFIG	cc;
 LPCSTR lpszCommName = "com1";
 char str[80] = "";
@@ -113,6 +116,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	VariableManager& vm = VariableManager::getInstance();
 	vm.set_curState("IDLE");
 	vm.set_countDataFrameBytesRead(0);
+	vm.set_stopThreadEvent(&stopThreadEvent);
+	vm.set_stopEOTThreadEvent(&stopEOTThreadEvent);
+	vm.set_stopTransmitTimeoutThreadEvent(&stopTransmitTimeoutThread);
 
 	hWnd = CreateWindow(Name, Name, WS_OVERLAPPEDWINDOW, 10, 10,
 		600, 400, NULL, NULL, hInst, NULL);
@@ -156,10 +162,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	create_CTRL_frames();
 
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
-
+	WriteParams wp(vm.get_EOT_frame(), frameLen);
+	PsendEOTParams sep = new sendEOTParams(stopEOTThreadEvent, &wp);
 	
-	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)sep, 0, &senderThreadId);
 
 	while (GetMessage(&Msg, NULL, 0, 0))
 	{
@@ -212,6 +218,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				wp->frame = CurrentSendingCharArrKieran;
 				vm.set_unfinishedTransmission(true);
 				vm.set_ENQ_FLAG(true);
+				SetEvent(*(vm.get_stopEOTThreadEvent()));
+				HANDLE enqThread = CreateThread(NULL, 0, transmissionTimeout, nullptr, 0, 0);
 				generateAndSendFrame(ENQ, wp);
 				vm.reset_numFramesSent();
 				vm.reset_numFramesReSent();
@@ -227,7 +235,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 
 	case WM_DESTROY:	// Terminate program
 		debugMessage("Connected Terminated");
-		SetEvent(stopThreadEvent);
+		//SetEvent(stopThreadEvent);
 		CloseHandle(hIdleTimeoutThrd);
 		CloseHandle(eventHandlerThrd);
 		CloseHandle(senderThrd);
@@ -261,27 +269,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 void goToIdle()
 {
 	VariableManager& vm = VariableManager::getInstance();
-	if (vm.get_curState() == "SEND")
-	{
-		triggerRandomWait();
-	}
+
+	std::string previous_state = (vm.get_curState() == "SEND") ? "SEND" : "RECEIVE";
 	vm.set_curState("IDLE");
 
 	debugMessage("Current State: " + vm.get_curState());
 	debugMessage("Going to IDLE");
 	vm.set_ENQ_FLAG(false);
 
-	// check to see if there's data
-	if (vm.get_unfinishedTransmission()) {
-		debugMessage("Buffer not empty yet, sending ENQ to bid for line");
-		wp->frame = vm.get_ENQ_frame();
-		wp->frameLen = 3;
-		sendFrame(wp);
-		vm.set_ENQ_FLAG(true);
-		vm.reset_numFramesSent();
-		vm.reset_numFramesReSent();
-		vm.set_hasSentEOT(false);
-	}
 	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
@@ -292,10 +287,29 @@ void goToIdle()
 	debugMessage(message.str());
 
 	size_t frameLen = 3;
-	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
+	PWriteParams wps = new WriteParams(vm.get_EOT_frame(), frameLen);
+	PsendEOTParams sep = new sendEOTParams(stopThreadEvent, wps);
 
-	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)sep, 0, &senderThreadId);
 
+	if (previous_state == "SEND")
+	{
+		triggerRandomWait();
+	}
+	
+	// check to see if there's data
+	if (vm.get_unfinishedTransmission()) {
+		debugMessage("Buffer not empty yet, sending ENQ to bid for line");
+		SetEvent(*(vm.get_stopEOTThreadEvent()));
+		HANDLE enqThread = CreateThread(NULL, 0, transmissionTimeout, nullptr, 0, 0);
+		wp->frame = vm.get_ENQ_frame();
+		wp->frameLen = 3;
+		sendFrame(wp);
+		vm.reset_numFramesSent();
+		vm.reset_numFramesReSent();
+		vm.set_ENQ_FLAG(true);
+		vm.set_hasSentEOT(false);
+	}
 }
 
 /*-------------------------------------------------------------------------------------
@@ -436,7 +450,7 @@ void terminateProgram()
 {
 	MessageBox(NULL, "Lost connection.", "", MB_OK);
 	debugMessage("Lost Connection");
-	SetEvent(stopThreadEvent);
+	//SetEvent(stopThreadEvent);
 	CloseHandle(hIdleTimeoutThrd);
 	CloseHandle(eventHandlerThrd);
 	CloseHandle(senderThrd);

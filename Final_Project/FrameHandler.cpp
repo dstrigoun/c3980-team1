@@ -37,7 +37,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		if (vm.get_countDataFrameBytesRead() == 1024) {
 			vm.set_countDataFrameBytesRead(0);
 			if (vm.get_isDuplicate()) {
-				generateAndSendFrame(NAK, wp);
+				generateAndSendFrame(ACK, wp);
 				vm.set_isDuplicate(false);
 			}
 			else {
@@ -257,8 +257,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	std::stringstream message;
 	message << "Received Frame: " << (LPSTR)frame << std::endl;
 	debugMessage(message.str());
-
-
 	// handle behaviour based on control char received
 
 	if (vm.get_curState() == "IDLE") {
@@ -268,17 +266,19 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
-			
 
-			TerminateThread(senderThrd, 0);
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			generateAndSendFrame( ACK, wp);
+
+			SetEvent(*(vm.get_stopEOTThreadEvent()));
 			vm.set_curState("RECEIVE");
 			// start receive timeout thread
 			vm.set_LAST_DATA(time(0));
 			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
+			//SetEvent(*(vm.get_stopEOTThreadEvent()));
+			SetEvent(vm.get_stopTransmitTimeoutThreadEvent());
 			vm.set_curState("SEND");
 			vm.set_unfinishedTransmission(true);
 
@@ -297,11 +297,15 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 				goToIdle();
 			}
 		case ACK:
-			if (vm.get_currUploadFile() == nullptr) {
+			if (vm.get_hitEOF()) {
 				vm.set_unfinishedTransmission(false);
 				goToIdle();
+				vm.get_currUploadFile()->close();
+				vm.set_currUploadFile(nullptr);
+				vm.set_hitEOF(false);
 				break;
 			}
+
 			//update DC1/DC2
 			vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
 			//trigger send frame
@@ -327,6 +331,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	else if (vm.get_curState() == "RECEIVE") {
 		if (ctrlChar == EOT)
 		{
+
 			goToIdle();
 		}
 	}
@@ -547,18 +552,29 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 DWORD WINAPI transmissionTimeout(LPVOID n)
 {
 	VariableManager& vm = VariableManager::getInstance();
+	time_t startTime = time(0);
 	time_t currentTime = time(0);
-	while (currentTime - vm.get_LAST_TRANSMISSION()) {
-		currentTime = time(0);
-		if (currentTime - vm.get_LAST_TRANSMISSION() > RETRANSMISSION_TIMEOUT_TIME_S)
+
+	DWORD waitResult;
+
+	while (1) {
+		waitResult = WaitForSingleObject(*(vm.get_stopTransmitTimeoutThreadEvent()), 10);
+		switch (waitResult)
 		{
-			goToIdle();
+		case WAIT_TIMEOUT:
+			currentTime = time(0);
+			if (currentTime - startTime > RETRANSMISSION_TIMEOUT_TIME_S)
+			{
+				goToIdle();
+				ExitThread(0);
+			}
+			break;
+		case WAIT_OBJECT_0:
+			ExitThread(0);
+			break;
+		default:
+			break;
 		}
-		int difference = currentTime - vm.get_LAST_TRANSMISSION();
-		std::stringstream message;
-		message << "Last Transmission " << difference << " seconds ago";
-		debugMessage(message.str());
-		Sleep(500);
 	}
-	return 0;
+
 }

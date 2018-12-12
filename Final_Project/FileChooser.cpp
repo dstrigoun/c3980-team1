@@ -126,10 +126,11 @@ char* getPayload() { //todo free char* pointer later?
 		payload[i] = currFile->get();
 		
 		if (currFile->eof()) {
-			payload[i] = EOF;
+			//payload[i] = EOF;
 			debugMessage("HIT EOF");
-			vm.get_currUploadFile()->close();
-			vm.set_currUploadFile(nullptr);
+			vm.set_hitEOF(true);
+			//vm.get_currUploadFile()->close();
+			//vm.set_currUploadFile(nullptr);
 			break;
 		}
 		if (currFile->fail()) {
