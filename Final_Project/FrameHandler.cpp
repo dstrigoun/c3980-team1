@@ -36,7 +36,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		readDataFrame(frame, *(rtp->numBytesRead), false);
 		if (vm.get_countDataFrameBytesRead() == 1024) {
 			vm.set_countDataFrameBytesRead(0);
-			debugMessage("Received entire frame");
 			if (vm.get_isDuplicate()) {
 				generateAndSendFrame(NAK, wp);
 				vm.set_isDuplicate(false);
@@ -55,7 +54,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			readDataFrame(frame, *(rtp->numBytesRead), true);
 			if (vm.get_countDataFrameBytesRead() == 1024) {
 				vm.set_countDataFrameBytesRead(0);
-				debugMessage("Received entire frame");
 				if (vm.get_isDuplicate()) {
 					generateAndSendFrame(NAK, wp);
 					vm.set_isDuplicate(false);
@@ -72,9 +70,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 	}
 	else {
-		debugMessage("Frame Corrupt, 1st Byte not SYN");
 	}
-	debugMessage("" + vm.get_countDataFrameBytesRead());
 }
 
 /*-------------------------------------------------------------------------------------
@@ -101,7 +97,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --------------------------------------------------------------------------------------*/
 void generateAndSendFrame(char ctrl, PWriteParams wp) {
 
-
 	VariableManager &vm = VariableManager::getInstance();
 	
 	char localCtlFrame[3] = {};
@@ -123,8 +118,6 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 	}
 	
 	sendFrame(wp);
-	
-	//start sender thread here with the above created frame
 
 }
 
@@ -168,7 +161,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 	
 	else {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
-		debugMessage("Next Frame to Receive: " + vm.get_nextFrameToReceive());
 		//check for dummy CRC bit
 		if (frame[1023] == 1) {
 			debugMessage("CRC bit is correct");
@@ -259,10 +251,14 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char dcChar = frame[2];
 	char CurrentSendingCharArrKieran[1024] = {};
 	wp->frame = CurrentSendingCharArrKieran;
-
-	debugMessage("Current State: " + vm.get_curState());
+	debugMessage("Received CTRL in State: " + vm.get_curState());
 	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
 	debugMessage("ENQ_FLAG: " + tempENQ);
+
+	std::stringstream message;
+	message << "Received Frame: " << (LPSTR)frame << std::endl;
+	debugMessage(message.str());
+
 
 	// handle behaviour based on control char received
 
@@ -270,18 +266,15 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 		if (ctrlChar == EOT) {
 			vm.set_LAST_EOT(time(0));
-			debugMessage("Received EOT");
 		}
 
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
-			debugMessage("Received ENQ & sending ACK");
+			
 
+			TerminateThread(senderThrd, 0);
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			generateAndSendFrame( ACK, wp);
-
 			vm.set_curState("RECEIVE");
-			debugMessage("curState is now RECEIVE");
-
 			// start receive timeout thread
 			vm.set_LAST_DATA(time(0));
 			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
@@ -301,7 +294,9 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		switch (ctrlChar)
 		{
 		case EOT:
-			goToIdle();
+			if (vm.get_hasSentEOT()) {
+				goToIdle();
+			}
 		case ACK:
 			if (vm.get_currUploadFile() == nullptr) {
 				vm.set_unfinishedTransmission(false);
@@ -311,12 +306,21 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			//update DC1/DC2
 			vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
 			//trigger send frame
-			debugMessage("Received ACK for Data Frame");
-			generateAndSendFrame(NULL, wp);
+			
+			if (!vm.isMaxFramesSent()) {
+				generateAndSendFrame(NULL, wp);
+			}
+			else {
+				debugMessage("Reached Max Number of Frames Sent");
+				wp->frame = vm.get_EOT_frame();
+				wp->frameLen = 3;
+				sendFrame(wp);
+				vm.set_hasSentEOT(true);
+				goToIdle();
+			}
 			break;
 		case NAK:
 			//trigger resend frame
-			debugMessage("Received NAK for Data Frame. Triggering Resend");
 			resendDataFrame();
 			break;
 		}

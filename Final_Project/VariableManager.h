@@ -88,7 +88,7 @@ public:
 	char* get_lastFrameSent(){ return this->lastFrameSent; }
 
 	bool isMaxFramesSent() {
-		return this->numFramesSent >= MAX_FRAMES_SENT;
+		return this->numFramesSent > MAX_FRAMES_SENT;
 	}
 	bool isMaxResends() {
 		return this->numFramesReSent > MAX_RESENDS;
@@ -103,6 +103,9 @@ public:
 	void set_isDuplicate(bool b) { this->isDuplicate = b; }
 	bool get_isDuplicate() { return this->isDuplicate; }
 
+	void set_hasSentEOT(bool b) { this->hasSentEOT = b; }
+	bool get_hasSentEOT() { return this->hasSentEOT; }
+
 private:
 	VariableManager() {}
 
@@ -111,8 +114,8 @@ private:
 	HWND hwnd;
 	HANDLE portHandle;
 	std::string curState;
-	int numFramesSent;
-	int numFramesReSent;
+	int numFramesSent = 1;
+	int numFramesReSent = 1;
 	DWORD LAST_EOT_RECEIVED;
 	DWORD LAST_DATA_FRAME_RECEIVED;
 	DWORD LAST_TRANSMISSION;
@@ -122,6 +125,7 @@ private:
 	char nextFrameToReceive = 17;
 	char nextFrameToSend = 17;
 	bool isDuplicate = false;
+	bool hasSentEOT = false;
 
 	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
 	int countDataFrameBytesRead;

@@ -53,7 +53,6 @@ DWORD numBytesRead;
 
 HANDLE hIdleTimeoutThrd;
 HANDLE eventHandlerThrd;
-HANDLE senderThrd;
 
 HANDLE stopThreadEvent = CreateEventA(NULL, false, false, "stopEventThread");
 COMMCONFIG	cc;
@@ -205,6 +204,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				MessageBox(hwnd, "file currenrtly uploading, please try again later", "sorry", MB_OK);
 			}
 			else {
+				TerminateThread(senderThrd, 0);
 				ifstream* kieransTempButNotReallyTempUploadFile = new ifstream;
 				*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
 				vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
@@ -212,11 +212,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				wp->frame = CurrentSendingCharArrKieran;
 				vm.set_unfinishedTransmission(true);
 				vm.set_ENQ_FLAG(true);
-				vm.set_nextFrameToSend(DC1);
 				generateAndSendFrame(ENQ, wp);
 				vm.reset_numFramesSent();
 				vm.reset_numFramesReSent();
-
+				vm.set_hasSentEOT(false);
 				PREADTHREADPARAMS rtp = new ReadThreadParams(stopThreadEvent, &numBytesRead);
 
 			}
@@ -269,6 +268,7 @@ void goToIdle()
 	vm.set_curState("IDLE");
 
 	debugMessage("Current State: " + vm.get_curState());
+	debugMessage("Going to IDLE");
 	vm.set_ENQ_FLAG(false);
 
 	// check to see if there's data
@@ -278,24 +278,24 @@ void goToIdle()
 		wp->frameLen = 3;
 		sendFrame(wp);
 		vm.set_ENQ_FLAG(true);
+		vm.reset_numFramesSent();
+		vm.reset_numFramesReSent();
+		vm.set_hasSentEOT(false);
 	}
-	else {
-		triggerRandomWait();
+	vm.set_LAST_EOT(time(0));
+	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 
-		vm.set_LAST_EOT(time(0));
-		hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
+	debugMessage("IDLE timeout created, starting to send EOTs");
 
-		debugMessage("IDLE timeout created, starting to send EOTs");
+	std::stringstream message;
+	message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
+	debugMessage(message.str());
 
-		std::stringstream message;
-		message << "EOT Frame to start thread: " << (LPSTR)vm.get_EOT_frame() << std::endl;
-		debugMessage(message.str());
+	size_t frameLen = 3;
+	PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
 
-		size_t frameLen = 3;
-		PWriteParams writeParams = new WriteParams(vm.get_EOT_frame(), frameLen);
+	senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
 
-		senderThrd = CreateThread(NULL, 0, sendEOTs, (LPVOID)writeParams, 0, &senderThreadId);
-	}
 }
 
 /*-------------------------------------------------------------------------------------

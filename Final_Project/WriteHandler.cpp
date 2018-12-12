@@ -45,31 +45,30 @@ void sendDataFrame(LPVOID writeParams)
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 
-	if (!vm.isMaxFramesSent()) {
-		sendFrameToPort( wp->frame, wp->frameLen);
-		vm.increment_numFramesSent();
+	sendFrameToPort(wp->frame, wp->frameLen);
 
-		debugMessage("DataFrame Sent Successfully");
-		debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
-	}
-	else {
-		debugMessage("Reached Max Number of Frames Sent");
-		goToIdle();
-	}
+	debugMessage("DataFrame Sent Successfully");
+	vm.increment_numFramesSent();
+	debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
+
 }
 
 void resendDataFrame()
 {
-
 	VariableManager &vm = VariableManager::getInstance();
 
 	if (!vm.isMaxResends()) {
 		sendFrameToPort( (char*)vm.get_lastFrameSent(), 1024);
 		vm.increment_numFramesReSent();
 		debugMessage("Number of resends: " + to_string(vm.get_numFramesReSent()));
+		
 	}
 	else {
 		debugMessage("Reached Max Number of Resends");
+		wp->frame = vm.get_EOT_frame();
+		wp->frameLen = 3;
+		sendFrame(wp);
+		vm.set_hasSentEOT(true);
 		goToIdle();
 	}
 }
@@ -103,10 +102,7 @@ DWORD WINAPI sendEOTs(LPVOID writeParams)
 
 	do {
 		sendFrameToPort(write_params->frame, write_params->frameLen);
-
-		debugMessage("Send EOT");
-
-		Sleep(5000);
+		Sleep(500);
 	} while (vm.get_curState() == "IDLE");
 	
 	return 0;
