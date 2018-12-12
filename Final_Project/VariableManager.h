@@ -91,8 +91,17 @@ public:
 		return this->numFramesSent >= MAX_FRAMES_SENT;
 	}
 	bool isMaxResends() {
-		return this->numFramesReSent > MAX_RESENDS;
+		return this->numFramesReSent >= MAX_RESENDS;
 	}
+
+	void set_stopThreadEvent(HANDLE* stopThreadEvent) { this->stopThreadEvent = stopThreadEvent; }
+	HANDLE* get_stopThreadEvent() { return this->stopThreadEvent; }
+
+	void set_stopEOTThreadEvent(HANDLE* stopEOTThreadEvent) { this->stopEOTThreadEvent = stopEOTThreadEvent; }
+	HANDLE* get_stopEOTThreadEvent() { return this->stopEOTThreadEvent; }
+
+	void set_stopTransmitTimeoutThreadEvent(HANDLE* stopTransmitTimeoutThreadEvent) { this->stopTransmitTimeoutThreadEvent = stopTransmitTimeoutThreadEvent; }
+	HANDLE* get_stopTransmitTimeoutThreadEvent() { return this->stopTransmitTimeoutThreadEvent; }
 
 	void set_nextFrameToReceive(char c) { this->nextFrameToReceive = c; }
 	char get_nextFrameToReceive() { return this->nextFrameToReceive; }
@@ -103,6 +112,16 @@ public:
 	void set_isDuplicate(bool b) { this->isDuplicate = b; }
 	bool get_isDuplicate() { return this->isDuplicate; }
 
+	void set_hasSentEOT(bool b) { this->hasSentEOT = b; }
+	bool get_hasSentEOT() { return this->hasSentEOT; }
+
+	void set_hitEOF(bool b) {
+		this->hitEOF = b;
+	}
+	bool get_hitEOF() {
+		return this->hitEOF;
+	}
+
 private:
 	VariableManager() {}
 
@@ -110,9 +129,12 @@ private:
 	bool ENQ_FLAG = false;
 	HWND hwnd;
 	HANDLE portHandle;
+	HANDLE* stopThreadEvent;
+	HANDLE* stopEOTThreadEvent;
+	HANDLE* stopTransmitTimeoutThreadEvent;
 	std::string curState;
-	int numFramesSent;
-	int numFramesReSent;
+	int numFramesSent = 1;
+	int numFramesReSent = 1;
 	DWORD LAST_EOT_RECEIVED;
 	DWORD LAST_DATA_FRAME_RECEIVED;
 	DWORD LAST_TRANSMISSION;
@@ -122,6 +144,9 @@ private:
 	char nextFrameToReceive = 17;
 	char nextFrameToSend = 17;
 	bool isDuplicate = false;
+	bool hasSentEOT = false;
+
+	bool hitEOF = false;
 
 	std::ifstream* currUploadFile; //later make a queue of filestreams for other multiple file uploads
 	int countDataFrameBytesRead;

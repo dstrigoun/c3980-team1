@@ -1,4 +1,5 @@
 #include "WriteHandler.h"
+#include "sendEOTParams.h"
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	sendFrame
@@ -45,31 +46,30 @@ void sendDataFrame(LPVOID writeParams)
 	PWriteParams wp;
 	wp = PWriteParams(writeParams);
 
-	if (!vm.isMaxFramesSent()) {
-		sendFrameToPort( wp->frame, wp->frameLen);
-		vm.increment_numFramesSent();
+	sendFrameToPort(wp->frame, wp->frameLen);
 
-		debugMessage("DataFrame Sent Successfully");
-		debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
-	}
-	else {
-		debugMessage("Reached Max Number of Frames Sent");
-		goToIdle();
-	}
+	debugMessage("DataFrame Sent Successfully");
+	vm.increment_numFramesSent();
+	debugMessage("Number of Data Frames Sent: " + to_string(vm.get_numFramesSent()));
+
 }
 
 void resendDataFrame()
 {
-
 	VariableManager &vm = VariableManager::getInstance();
 
 	if (!vm.isMaxResends()) {
 		sendFrameToPort( (char*)vm.get_lastFrameSent(), 1024);
 		vm.increment_numFramesReSent();
 		debugMessage("Number of resends: " + to_string(vm.get_numFramesReSent()));
+		
 	}
 	else {
 		debugMessage("Reached Max Number of Resends");
+		wp->frame = vm.get_EOT_frame();
+		wp->frameLen = 3;
+		sendFrame(wp);
+		vm.set_hasSentEOT(true);
 		goToIdle();
 	}
 }
@@ -93,21 +93,37 @@ void resendDataFrame()
 --	NOTES:
 --	Pass this thread function to Sender thread to send out a frame
 --------------------------------------------------------------------------------------*/
-DWORD WINAPI sendEOTs(LPVOID writeParams)
+DWORD WINAPI sendEOTs(LPVOID n)
 {
+	debugMessage("Creating EOT thread");
 
 	VariableManager &vm = VariableManager::getInstance();
 
-	PWriteParams write_params;
-	write_params = PWriteParams(writeParams);
+	PsendEOTParams sep;
+	sep = (PsendEOTParams)n;
+
+	//WriteParams wppp = sep->wp;
+
+	DWORD waitResult;
+	sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
 
 	do {
-		sendFrameToPort(write_params->frame, write_params->frameLen);
+		waitResult = WaitForSingleObject(*(vm.get_stopEOTThreadEvent()), 500);	
+		
+		switch (waitResult) {
+		case WAIT_TIMEOUT:
+			debugMessage("case timeout");
 
-		debugMessage("Send EOT");
+			sendFrameToPort(sep->wp->frame, sep->wp->frameLen);
 
-		Sleep(5000);
-	} while (vm.get_curState() == "IDLE");
+			break;
+		case WAIT_OBJECT_0:
+			debugMessage("Ending the eot thread");
+			ExitThread(0);
+			break;
+		default:
+			;
+		}
+	} while (1);
 	
-	return 0;
 }

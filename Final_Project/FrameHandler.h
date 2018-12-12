@@ -30,6 +30,7 @@ void generateDataFrame(char* dataFrame);
 void generateCtrlFrame(char* ctrlFrame, char ctrl);
 
 DWORD WINAPI receiveTimeout(LPVOID n);
+DWORD WINAPI transmissionTimeout(LPVOID n);
 
 //boost::uint16_t buildCRC(const char* data);
 //bool checkCRC(const char* data, boost::uint16_t receivedCRC);
