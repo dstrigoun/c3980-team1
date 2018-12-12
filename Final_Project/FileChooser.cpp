@@ -1,3 +1,29 @@
+/*-------------------------------------------------------------------------------------
+--	SOURCE FILE:    FileChooser.cpp - An application that create/show window and handles basic
+--										menu functions and window events, as well as getting data
+--									  from the selected file
+--
+--	PROGRAM:		GTID
+--
+--	FUNCTIONS:
+--					std::ifstream openFile(HWND *hWnd)
+--					char* getPayload()
+--
+--
+--	DATE:			November 21, 2018
+--
+--	REVISIONS:		November 22, 2018 - added getPayload()
+--					November 23, 2018 - finished getPayload()
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Kieran Lee
+--
+--	NOTES:
+--	in charge of choosing the file and getting data from it
+--
+--------------------------------------------------------------------------------------*/
+
 #include "FileChooser.h"
 #include "FrameHandler.h"
 
@@ -22,12 +48,12 @@ const COMDLG_FILTERSPEC c_rgSaveTypes[] =
 --
 --	PROGRAMMER:		Kieran Lee
 --
---	INTERFACE:		HRESULT openFile()
+--	INTERFACE:		std::ifstream openFile(HWND *hWnd)
 --
---	RETURNS:		HRESULT object
---                  This will contain any error codes if the function fails
+--	RETURNS:		std::ifstream file
+--                  File stream of the file that the user has chosen to upload;
 --
---	NOTES:          TODO
+--	NOTES:          Users can only choose .txt files
 --
 --------------------------------------------------------------------------------------*/
 std::ifstream openFile(HWND *hWnd)
@@ -106,6 +132,26 @@ std::ifstream openFile(HWND *hWnd)
 	return hFile;
 }
 
+
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	    getPayload
+--
+--	DATE:			November 22, 2018
+--
+--	REVISIONS:		November 23, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Kieran Lee
+--
+--	INTERFACE:		char* getPayload()
+--
+--	RETURNS:		char*
+--                  character array of length 1021 that contains data from the file to send
+--
+--	NOTES:          If there are not 1021 characters left in the file stream, then the remaining will be padded with DC4
+--
+--------------------------------------------------------------------------------------*/
 char* getPayload() {
 
 	VariableManager &vm = VariableManager::getInstance();
@@ -114,9 +160,6 @@ char* getPayload() {
 	}
 	ifstream* currFile = vm.get_currUploadFile();
 
-	std::ofstream file;
-	file.open("log.txt", std::fstream::app);
-	file.close();
 	char* payload = new char[NUM_PAYLOAD_BYTES + 1];
 	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
 		payload[i] = DC4;
