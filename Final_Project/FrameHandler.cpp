@@ -116,7 +116,6 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 			wp->frame[i] = localDataFrame[i];
 		}
 	}
-	
 	sendFrame(wp);
 
 }
