@@ -22,7 +22,7 @@
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim, Dasha Strigoun, Alexander Song
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun, Alexander Song, Kieran Lee
 --
 --	NOTES:
 --	This program will create the window and menu that the user can interact with.
@@ -80,7 +80,7 @@ const int char_width{ 8 };
 --
 --	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
 --
---	PROGRAMMER:		Jason Kim
+--	PROGRAMMER:		Jason Kim, Dasha Strigoun, Kieran Lee, Alexander Song
 --
 --	INTERFACE:		int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 --									LPSTR lspszCmdParam, int nCmdShow)
