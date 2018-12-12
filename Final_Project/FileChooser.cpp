@@ -106,7 +106,7 @@ std::ifstream openFile(HWND *hWnd)
 	return hFile;
 }
 
-char* getPayload() { //todo free char* pointer later?
+char* getPayload() {
 
 	VariableManager &vm = VariableManager::getInstance();
 	if (vm.get_currUploadFile() == nullptr) {
@@ -116,7 +116,6 @@ char* getPayload() { //todo free char* pointer later?
 
 	std::ofstream file;
 	file.open("log.txt", std::fstream::app);
-	//file << time(0) << ": \tinGetpAYLOAD, before loop\n";
 	file.close();
 	char* payload = new char[NUM_PAYLOAD_BYTES + 1];
 	for (int i = 0; i < NUM_PAYLOAD_BYTES; i++) {
@@ -126,11 +125,8 @@ char* getPayload() { //todo free char* pointer later?
 		payload[i] = currFile->get();
 		
 		if (currFile->eof()) {
-			//payload[i] = EOF;
 			debugMessage("HIT EOF");
 			vm.set_hitEOF(true);
-			//vm.get_currUploadFile()->close();
-			//vm.set_currUploadFile(nullptr);
 			break;
 		}
 		if (currFile->fail()) {

@@ -131,6 +131,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	vm.set_hwnd(hWnd);
 
 	srand((unsigned int)time(0));
+
 	//initial random wait to put programs off sync to reduce collision
 	triggerRandomWait();
 
@@ -142,21 +143,16 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hprevInstance,
 	{
 		MessageBox(NULL, TEXT("Error opening COM port:"), TEXT(""), MB_OK);
 		debugMessage("Error opening COM port");
-		//PostQuitMessage(0); // end program since opening port failed
 	}
 	vm.set_portHandle(tempPortHandle);
 	COMMTIMEOUTS timeouts = { 0,0,10,0,0 };
 	SetCommTimeouts(vm.get_portHandle(), &timeouts);
 
-	//wp.portHandle = portHandle;
-	//wp.frame = CurrentSendingCharArrKieran;
-	//wp.frameLen = 1024;
 	cc.dwSize = sizeof(COMMCONFIG);
 	cc.wVersion = 0x100;
 
 	SetCommMask(vm.get_portHandle(), EV_RXCHAR);
 	debugMessage("Starting Connection");
-	//start thread with checkIdleTimeout
 	vm.set_LAST_EOT(time(0));
 	hIdleTimeoutThrd = CreateThread(NULL, 0, checkIdleTimeout, 0, 0, &idleTimeoutThreadId);
 	PREADTHREADPARAMS rtp = new ReadThreadParams (stopThreadEvent, &numBytesRead);
@@ -223,7 +219,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 				TerminateThread(senderThrd, 0);
 				ifstream* kieransTempButNotReallyTempUploadFile = new ifstream;
 				*kieransTempButNotReallyTempUploadFile = openFile(&hwnd);
-				vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile); //ho;pefully this memery is never releazsed weh we are usnig it
+				vm.set_currUploadFile(kieransTempButNotReallyTempUploadFile);
 
 				wp->frame = CurrentSendingCharArrKieran;
 				vm.set_unfinishedTransmission(true);
@@ -257,7 +253,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message,
 		break;
 	case WM_DESTROY:	// Terminate program
 		debugMessage("Connected Terminated");
-		//SetEvent(stopThreadEvent);
 		CloseHandle(hIdleTimeoutThrd);
 		CloseHandle(eventHandlerThrd);
 		CloseHandle(senderThrd);
@@ -472,7 +467,6 @@ void terminateProgram()
 {
 	MessageBox(NULL, "Lost connection.", "", MB_OK);
 	debugMessage("Lost Connection");
-	//SetEvent(stopThreadEvent);
 	CloseHandle(hIdleTimeoutThrd);
 	CloseHandle(eventHandlerThrd);
 	CloseHandle(senderThrd);
@@ -500,10 +494,8 @@ void terminateProgram()
 --------------------------------------------------------------------------------------*/
 void sendCharacter(HWND hwnd) {
 	VariableManager& vm = VariableManager::getInstance();
-	//HDC hdc = GetDC(hwnd); // get device context
 	sprintf_s(str, "%c", LPCWSTR('a'));
 	WriteFile(vm.get_portHandle(), str, 1, 0, NULL);
-	//ReleaseDC(hwnd, hdc); // Release device context
 }
 
 void create_CTRL_frames() {

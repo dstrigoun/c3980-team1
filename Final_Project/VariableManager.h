@@ -3,19 +3,6 @@
 #include <Windows.h>
 #include <string>
 #include <fstream>
-/*
-curr state
-enq flag
-port handle
-hwnd
-
-
-unfinished transission
-currently open file stream
-last eot received
-
-wp?
-*/
 
 class VariableManager {
 public:
