@@ -30,6 +30,7 @@ void generateDataFrame(char* dataFrame);
 void generateCtrlFrame(char* ctrlFrame, char ctrl);
 
 DWORD WINAPI receiveTimeout(LPVOID n);
+DWORD WINAPI transmissionTimeout(LPVOID n);
 
 DWORD WINAPI displayStats(LPVOID hwnd);
 

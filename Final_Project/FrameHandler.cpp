@@ -38,9 +38,8 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		readDataFrame(frame, *(rtp->numBytesRead), false);
 		if (vm.get_countDataFrameBytesRead() == 1024) {
 			vm.set_countDataFrameBytesRead(0);
-			debugMessage("Received entire frame");
 			if (vm.get_isDuplicate()) {
-				generateAndSendFrame(NAK, wp);
+				generateAndSendFrame(ACK, wp);
 				vm.set_isDuplicate(false);
 			}
 			else {
@@ -57,7 +56,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			readDataFrame(frame, *(rtp->numBytesRead), true);
 			if (vm.get_countDataFrameBytesRead() == 1024) {
 				vm.set_countDataFrameBytesRead(0);
-				debugMessage("Received entire frame");
 				if (vm.get_isDuplicate()) {
 					generateAndSendFrame(NAK, wp);
 					vm.set_isDuplicate(false);
@@ -74,9 +72,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		}
 	}
 	else {
-		debugMessage("Frame Corrupt, 1st Byte not SYN");
 	}
-	debugMessage("" + vm.get_countDataFrameBytesRead());
 }
 
 /*-------------------------------------------------------------------------------------
@@ -103,7 +99,6 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 --------------------------------------------------------------------------------------*/
 void generateAndSendFrame(char ctrl, PWriteParams wp) {
 
-
 	VariableManager &vm = VariableManager::getInstance();
 	
 	char localCtlFrame[3] = {};
@@ -123,10 +118,7 @@ void generateAndSendFrame(char ctrl, PWriteParams wp) {
 			wp->frame[i] = localDataFrame[i];
 		}
 	}
-	
 	sendFrame(wp);
-	
-	//start sender thread here with the above created frame
 
 }
 
@@ -170,7 +162,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 	
 	else {
 		//alternate nextFrameToReceive between DC1 and DC2 for duplicate checks
-		debugMessage("Next Frame to Receive: " + vm.get_nextFrameToReceive());
 		//check for dummy CRC bit
 		if (frame[1023] == 1) {
 			debugMessage("CRC bit is correct");
@@ -263,11 +254,13 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 	char dcChar = frame[2];
 	char CurrentSendingCharArrKieran[1024] = {};
 	wp->frame = CurrentSendingCharArrKieran;
-
-	debugMessage("Current State: " + vm.get_curState());
+	debugMessage("Received CTRL in State: " + vm.get_curState());
 	std::string tempENQ = (vm.get_ENQ_FLAG()) ? "TRUE" : "FALSE";
 	debugMessage("ENQ_FLAG: " + tempENQ);
 
+	std::stringstream message;
+	message << "Received Frame: " << (LPSTR)frame << std::endl;
+	debugMessage(message.str());
 	// handle behaviour based on control char received
 
 	if (vm.get_curState() == "IDLE") {
@@ -275,23 +268,22 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 		if (ctrlChar == EOT) {
 			vm.set_LAST_EOT(time(0));
-			debugMessage("Received EOT");
 		}
 
 		else if (ctrlChar == ENQ && !(vm.get_ENQ_FLAG())) {
-			debugMessage("Received ENQ & sending ACK");
 
 			char ctrlFrame[3]; // if generateFrame ever becomes async, then we have to worry about exiting the scope where this is defined before we acutally send it
 			generateAndSendFrame( ACK, wp);
 
+			SetEvent(*(vm.get_stopEOTThreadEvent()));
 			vm.set_curState("RECEIVE");
-			debugMessage("curState is now RECEIVE");
-
 			// start receive timeout thread
 			vm.set_LAST_DATA(time(0));
 			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
+			//SetEvent(*(vm.get_stopEOTThreadEvent()));
+			SetEvent(vm.get_stopTransmitTimeoutThreadEvent());
 			vm.set_curState("SEND");
 			vm.set_unfinishedTransmission(true);
 			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
@@ -307,25 +299,40 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 		switch (ctrlChar)
 		{
 		case EOT:
-			goToIdle();
+			if (vm.get_hasSentEOT()) {
+				goToIdle();
+			}
 		case ACK:
 			vm.set_numACKReceived(vm.get_numACKReceived() + 1); // increment ACK count
-			if (vm.get_currUploadFile() == nullptr) {
+			if (vm.get_hitEOF()) {
 				vm.set_unfinishedTransmission(false);
 				goToIdle();
+				vm.get_currUploadFile()->close();
+				vm.set_currUploadFile(nullptr);
+				vm.set_hitEOF(false);
 				break;
 			}
+
 			//update DC1/DC2
 			vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
 			//trigger send frame
-			debugMessage("Received ACK for Data Frame");
-			generateAndSendFrame(NULL, wp);
+			
+			if (!vm.isMaxFramesSent()) {
+				generateAndSendFrame(NULL, wp);
+			}
+			else {
+				debugMessage("Reached Max Number of Frames Sent");
+				wp->frame = vm.get_EOT_frame();
+				wp->frameLen = 3;
+				sendFrame(wp);
+				vm.set_hasSentEOT(true);
+				goToIdle();
+			}
 			break;
 		case NAK:
 			vm.set_numNAKReceived(vm.get_numNAKReceived() + 1); // increment NAK count
 			//trigger resend frame
-			debugMessage("Received NAK for Data Frame. Triggering Resend");
-			//resendDataFrame();
+			resendDataFrame();
 			break;
 		}
 	}
@@ -340,6 +347,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 		if (ctrlChar == EOT)
 		{
+
 			goToIdle();
 		}
 	}
@@ -561,21 +569,30 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 DWORD WINAPI transmissionTimeout(LPVOID n)
 {
 	VariableManager& vm = VariableManager::getInstance();
+	time_t startTime = time(0);
 	time_t currentTime = time(0);
-	while (currentTime - vm.get_LAST_TRANSMISSION()) {
-		currentTime = time(0);
-		if (currentTime - vm.get_LAST_TRANSMISSION() > RETRANSMISSION_TIMEOUT_TIME_S)
-		{
-			goToIdle();
-		}
-		int difference = currentTime - vm.get_LAST_TRANSMISSION();
-		std::stringstream message;
-		message << "Last Transmission " << difference << " seconds ago";
-		debugMessage(message.str());
 
-		Sleep(500);
+	DWORD waitResult;
+
+	while (1) {
+		waitResult = WaitForSingleObject(*(vm.get_stopTransmitTimeoutThreadEvent()), 10);
+		switch (waitResult)
+		{
+		case WAIT_TIMEOUT:
+			currentTime = time(0);
+			if (currentTime - startTime > RETRANSMISSION_TIMEOUT_TIME_S)
+			{
+				goToIdle();
+				ExitThread(0);
+			}
+			break;
+		case WAIT_OBJECT_0:
+			ExitThread(0);
+			break;
+		default:
+			break;
+		}
 	}
-	return 0;
 }
 
 /*-------------------------------------------------------------------------------------
@@ -627,5 +644,6 @@ DWORD WINAPI displayStats(LPVOID hwnd)
 		Sleep(500);
 	}
 	return 0;
+
 
 }

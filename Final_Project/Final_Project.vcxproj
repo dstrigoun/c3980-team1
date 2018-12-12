@@ -130,6 +130,7 @@
     <ClInclude Include="Main.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="Receiver.h" />
+    <ClInclude Include="sendEOTParams.h" />
     <ClInclude Include="Sender.h" />
     <ClInclude Include="VariableManager.h" />
     <ClInclude Include="WriteHandler.h" />

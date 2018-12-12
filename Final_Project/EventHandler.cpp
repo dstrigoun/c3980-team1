@@ -31,13 +31,14 @@ DWORD WINAPI pollForEvents(LPVOID n)
 	DWORD waitResult;
 
 	while (1) {
-		waitResult = WaitForSingleObject(readTP->stopThreadEvent, 10);
+		waitResult = WaitForSingleObject(*(vm.get_stopThreadEvent()), 10);
 		switch (waitResult)
 		{
 		case WAIT_TIMEOUT:
 			readFromPort(readTP);
 			break;
 		case WAIT_OBJECT_0:
+			debugMessage("STOPPED READ THREAD");
 			ExitThread(0);
 			break;
 		default:

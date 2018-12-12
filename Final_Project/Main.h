@@ -31,6 +31,7 @@ static DWORD IDLE_TIMEOUT_TIME_S = 30;
 static DWORD RECEIVE_TIMEOUT_TIME_S = 8;
 static DWORD RETRANSMISSION_TIMEOUT_TIME_S = 2;
 static DWORD CHECK_IDLE_TIMEOUT_MS = 5000;
+static HANDLE senderThrd;
 
 static PWriteParams wp = new WriteParams(NULL, NULL);
 
