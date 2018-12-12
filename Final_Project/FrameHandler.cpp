@@ -167,20 +167,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 			debugMessage("CRC bit is correct");
 		}
 
-		// CRC code that does not work
-		//-----------------------------------------------------
-		//char cur[1024] = {};
-		//sprintf_s(cur, "original CRC: %x", receivedCRC);
-		//OutputDebugString(cur);
-		//OutputDebugString("\n");
-
-		////check lastByte CRC if data is corrupt
-		//if (checkCRC(data, (boost::uint16_t)receivedCRC)) {
-		//	OutputDebugString("CRC passed\n");
-		//}
-		//OutputDebugString("CRC failed\n");
-		//-----------------------------------------------------
-
 		char data[1021] = {};
 
 		if (firstPartOfFrame) {
@@ -194,8 +180,6 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 			}
 		}
 		
-		// Check for EOF (-1) in the data
-		//int data_size = sizeof(data) / sizeof(*data);
 		int data_size = 0;
 		if (firstPartOfFrame) {
 			data_size = numBytesRead -2;
@@ -282,7 +266,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			hTimeoutThrd = CreateThread(NULL, 0, receiveTimeout, 0, 0, &timeoutThreadId);
 		}
 		else if (ctrlChar == ACK && (vm.get_ENQ_FLAG())) {
-			//SetEvent(*(vm.get_stopEOTThreadEvent()));
 			SetEvent(vm.get_stopTransmitTimeoutThreadEvent());
 			vm.set_curState("SEND");
 			vm.set_unfinishedTransmission(true);
@@ -347,7 +330,6 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 
 		if (ctrlChar == EOT)
 		{
-
 			goToIdle();
 		}
 	}
@@ -407,23 +389,6 @@ void generateDataFrame(char* dataFrame) {
 	vm.get_lastFrameSent()[1023] = dummyCRC;
 	debugMessage("Generated CRC bit is: " + dummyCRC);
 
-	// CRC code that does not work
-	//------------------------------------------------------
-	//boost::uint16_t var = buildCRC(data);
-
-	//char msgbuf[1024];
-	//sprintf_s(msgbuf, "%x", (unsigned)var);
-	//OutputDebugString(msgbuf);
-	//OutputDebugString("\n");
-
-	//strcat_s(dataFrame, 1021, msgbuf);
-	//-------------------------------------------------------
-
-	//should set lastFrameSent here 
-
-	//vm.set_lastFrameSent(dataFrame);
-	//vm.set_nextFrameToSend((vm.get_nextFrameToSend() == DC1) ? DC2 : DC1);
-
 }
 
 /*-------------------------------------------------------------------------------------
@@ -461,72 +426,6 @@ void generateCtrlFrame(char* ctrlFrame, char ctrl) {
 	message << "Generate CTRL frame: " << (LPSTR)ctrlFrame << std::endl;
 	debugMessage(message.str());
 }
-
-/*-------------------------------------------------------------------------------------
---	FUNCTION:	buildCRC
---
---	DATE:			November 26, 2018
---
---	REVISIONS:		November 26, 2018
---
---	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
---
---	PROGRAMMER:		Dasha Strigoun
---
---	INTERFACE:		char* buildCRC(const char* data)
---						const char* data - data to send
---
---	RETURNS:		boost::uint16_t - generated CRC based on data
---
---	NOTES:
---  Call this to build CRC for set of data
---------------------------------------------------------------------------------------*/
-//boost::uint16_t buildCRC(const char* data) {
-//	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
-//
-//	result.process_bytes(data, 1021);
-//
-//	return result.checksum();
-//}
-
-/*-------------------------------------------------------------------------------------
---	FUNCTION:	checkCRC
---
---	DATE:			November 26, 2018
---
---	REVISIONS:		November 26, 2018
---
---	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
---
---	PROGRAMMER:		Dasha Strigoun
---
---	INTERFACE:		bool checkCRC(const char* data, const char* receivedCRC)
---						const char* data - data to send
---						const char* receivedCRC - CRC checksum at the end of frame
---
---	RETURNS:		bool - whether receivedCRC and calculated CRC match
---
---	NOTES:
---  Call this to check the CRC in the last byte of the data frame
---------------------------------------------------------------------------------------*/
-//bool checkCRC(const char* data, boost::uint16_t receivedCRC) {
-//	boost::crc_basic<8> result(0x1021, 0xFFFF, 0, false, false);
-//
-//	result.process_bytes(data, 1021);
-//
-//	char expected[64] = {};
-//	sprintf_s(expected, "expected CRC: %u", (unsigned)receivedCRC);
-//	OutputDebugString(expected);
-//	OutputDebugString("\n");
-//
-//	char msgbuf[1024];
-//	sprintf_s(msgbuf, "calculated CRC: %u", (unsigned)result.checksum());
-//	OutputDebugString(msgbuf);
-//	OutputDebugString("\n");
-//
-//	return result.checksum() == receivedCRC;
-//}
-
 
 /*-------------------------------------------------------------------------------------
 --	FUNCTION:	receiveTimeout
