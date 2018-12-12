@@ -19,10 +19,6 @@ static const char ENQ = 5;
 static const char EOT = 4;
 static const char SMILEY = 2;
 
-static char nextFrameToReceive = DC1;
-static char nextFrameToSend = DC1;
-static bool isClearToSend = true;
-
 void receiveFrame(const char* frame, PREADTHREADPARAMS rtp);
 void generateAndSendFrame(char ctrl, PWriteParams wp);
 
