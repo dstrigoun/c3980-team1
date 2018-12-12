@@ -42,7 +42,7 @@ void receiveFrame(const char* frame, PREADTHREADPARAMS rtp) {
 				vm.set_isDuplicate(false);
 			}
 			else {
-				vm.set_nextFrameToReceive((frame[1] == DC1) ? DC2 : DC1);
+				vm.set_nextFrameToReceive((vm.get_nextFrameToReceive() == DC1) ? DC2 : DC1);
 				generateAndSendFrame(ACK, wp);
 			}
 		}
@@ -210,7 +210,7 @@ void readDataFrame(const char* frame, DWORD numBytesRead, bool firstPartOfFrame)
 		else {
 			data_size = numBytesRead;
 		}
-
+	
 		std::ofstream file;
 		if (!vm.get_isDuplicate()) {
 			file.open("receive_data.txt", std::fstream::app);
@@ -369,12 +369,13 @@ void generateDataFrame(char* dataFrame) {
 	// copy local data frame into data frame
 	for (int i = 0; i < 1024; i++) {
 		dataFrame[i] = localData[i];
+		vm.get_lastFrameSent()[i] = localData[i];
 	}
 
 	//append the dummy CRC bit
 	char dummyCRC = 1;
 	dataFrame[1023] = dummyCRC;
-
+	vm.get_lastFrameSent()[1023] = dummyCRC;
 	debugMessage("Generated CRC bit is: " + dummyCRC);
 
 	// CRC code that does not work

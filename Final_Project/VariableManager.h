@@ -80,7 +80,7 @@ public:
 	int get_countDataFrameBytesRead() { return countDataFrameBytesRead; }
 
 	void set_lastFrameSent(char* lastFrame) {
-		strcpy_s(this->lastFrameSent, lastFrame);
+		//strcpy_s(this->lastFrameSent, lastFrame);
 	}
 	char* get_lastFrameSent(){ return this->lastFrameSent; }
 
@@ -88,7 +88,7 @@ public:
 		return this->numFramesSent >= MAX_FRAMES_SENT;
 	}
 	bool isMaxResends() {
-		return this->numFramesReSent >= MAX_RESENDS;
+		return this->numFramesReSent > MAX_RESENDS;
 	}
 
 	void set_nextFrameToReceive(char c) { this->nextFrameToReceive = c; }
