@@ -295,7 +295,7 @@ void readCtrlFrame(const char* frame, PREADTHREADPARAMS rtp) {
 			vm.set_curState("SEND");
 			vm.set_unfinishedTransmission(true);
 			vm.set_numACKReceived(vm.get_numACKReceived() + 1);
-			
+
 			debugMessage("Sending payload");
 			//send the first data frame
 			generateAndSendFrame(NULL, wp);
@@ -623,7 +623,9 @@ DWORD WINAPI displayStats(LPVOID hwnd)
 		TextOut(hdc, 0, 2 * char_height, ackStats, strlen(ackStats));
 		TextOut(hdc, 0, 3 * char_height, nakStats, strlen(nakStats));
 		ReleaseDC((HWND)hwnd, hdc);
+
 		Sleep(500);
 	}
 	return 0;
+
 }

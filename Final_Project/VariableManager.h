@@ -94,7 +94,6 @@ public:
 		return this->numFramesReSent > MAX_RESENDS;
 	}
 
-
 	int get_numACKReceived() { return this->numACKReceived; }
 	void set_numACKReceived(int num) { this->numACKReceived = num; }
 
@@ -115,7 +114,6 @@ public:
 
 	void set_isDuplicate(bool b) { this->isDuplicate = b; }
 	bool get_isDuplicate() { return this->isDuplicate; }
-
 
 private:
 	VariableManager() {}
