@@ -471,6 +471,26 @@ DWORD WINAPI receiveTimeout(LPVOID n)
 	return 0;
 }
 
+/*-------------------------------------------------------------------------------------
+--	FUNCTION:	transmissionTimeout
+--
+--	DATE:			December 12, 2018
+--
+--	REVISIONS:		December 12, 2018
+--
+--	DESIGNER:		Dasha Strigoun, Kieran Lee, Alexander Song, Jason Kim
+--
+--	PROGRAMMER:		Jason Kim
+--
+--	INTERFACE:		DWORD WINAPI transmissionTimeout(LPVOID n)
+--						LPVOID n: void pointer to thread param
+--
+--	RETURNS:		returns 0
+--
+--	NOTES:
+--	Called by the thread created to periodically check the difference between
+--  the current time and the time when last transmission was sent
+--------------------------------------------------------------------------------------*/
 DWORD WINAPI transmissionTimeout(LPVOID n)
 {
 	VariableManager& vm = VariableManager::getInstance();
